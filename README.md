@@ -2,6 +2,8 @@
 
 A Next.js application that allows users to apply various dithering algorithms to images with adjustable bit depth control.
 
+🚀 **Live Demo**: [https://sergeydus.github.io/DitherIT/](https://sergeydus.github.io/DitherIT/)
+
 ## Features
 
 - **Load Images**: Upload images from your device
