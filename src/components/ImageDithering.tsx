@@ -11,6 +11,7 @@ export default function ImageDithering() {
   const [ditheringMethod, setDitheringMethod] = useState<DitheringMethod>('floyd-steinberg');
   const [bitDepth, setBitDepth] = useState<number>(4);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [applyBlur, setApplyBlur] = useState(false);
 
   // Load and display image
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -162,6 +163,27 @@ export default function ImageDithering() {
               <span>8 bit</span>
             </div>
           </div>
+
+          {/* Blur Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Filters
+            </label>
+            <div className="flex items-center space-x-3">
+              <input
+                type="checkbox"
+                id="blur-filter"
+                checked={applyBlur}
+                onChange={(e) => setApplyBlur(e.target.checked)}
+                disabled={!originalImage}
+                className="w-4 h-4 bg-gray-700 border border-gray-600 rounded
+                  cursor-pointer accent-blue-600"
+              />
+              <label htmlFor="blur-filter" className="text-sm text-gray-300 cursor-pointer">
+                Apply Blur (1px)
+              </label>
+            </div>
+          </div>
         </div>
 
         {/* Download Button */}
@@ -204,6 +226,9 @@ export default function ImageDithering() {
             <canvas
               ref={canvasRef}
               className="max-w-full h-auto rounded shadow-lg"
+              style={{
+                filter: applyBlur ? 'blur(1px)' : 'none',
+              }}
             />
           )}
         </div>
