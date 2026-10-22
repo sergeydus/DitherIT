@@ -4,6 +4,10 @@ A Next.js application that allows users to apply various dithering algorithms to
 
 🚀 **Live Demo**: [https://sergeydus.github.io/DitherIT/](https://sergeydus.github.io/DitherIT/)
 
+## Modernization specifications
+
+See the [modernization specification set](docs/modernization/README.md) for the proposed UI/UX redesign, accessibility requirements, processing architecture, and phased implementation plan. These documents describe planned work; the current app has not yet been modernized.
+
 ## Features
 
 - **Load Images**: Upload images from your device
