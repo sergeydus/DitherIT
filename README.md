@@ -6,7 +6,7 @@ A Next.js application that allows users to apply various dithering algorithms to
 
 ## Modernization specifications
 
-See the [modernization specification set](docs/modernization/README.md) for the proposed UI/UX redesign, accessibility requirements, processing architecture, and phased implementation plan. These documents describe planned work; the current app has not yet been modernized.
+See the [modernization specification set](docs/modernization/README.md) for the UI/UX roadmap, accessibility requirements, processing architecture, and implementation plan. M0 rendering and M1 import/lifecycle are implemented; the broader UI/UX redesign remains planned. [M1 implementation notes](docs/modernization/05-m1-implementation.md) describe behavior, tests and remaining coverage.
 
 ## Features
 

@@ -12,7 +12,7 @@ Core job: “When I have an image, help me try a few reduced-color looks, inspec
 
 The app uses Next.js 16.1.1, React 19.2.3, TypeScript, Tailwind 4, and the Canvas API. A single client component owns import, controls, rendering, export, and explanatory content. Six method options are exposed, including Original. Deployment uses static export at `/DitherIT` on GitHub Pages. These are observations of the checked-in files, not an assessment of dependency freshness or security.
 
-Source references below are repository-relative. Line references describe the snapshot reviewed on 2026-10-22 and may shift during implementation.
+Source references below are repository-relative. Findings and line references describe the pre-modernization snapshot reviewed on 2026-10-22, rather than asserting that each issue is still present. The requirement register in specification 04 tracks implementation and remaining checks.
 
 | Finding | Source evidence | User impact | Requirement |
 | --- | --- | --- | --- |
@@ -33,9 +33,9 @@ Source references below are repository-relative. Line references describe the sn
 | Ordered adds a large offset at every depth | `dithering.ts:98`: `(rank / 16 - 0.5) * 255` ranges from −127.5 to +111.5625, independent of depth | Even 8-bit Ordered is heavily noisy; it does not preserve an already full-depth image | IMG-04, P0 |
 | Random amplitude ignores quantization step and has no seed | `dithering.ts:121` adds ±25 noise using `Math.random()` | High-depth Random still adds visible noise; repeated results vary | IMG-04, P0 |
 | Validation is limited to the available lint/build scripts | `package.json`; `.github/workflows/deploy.yml` installs/builds/deploys | No checked-in behavioral regression suite or CI lint gate | QA-01, P0 |
-| Push deployment watched a nonexistent branch (corrected locally) | Audited `.github/workflows/deploy.yml:6` watched `main`; local HEAD and GitHub branch list show only `master`; both recorded runs were `workflow_dispatch` | Pushes previously missed deployment; the one-line trigger correction to `master` is applied locally and can ship independently of the modernization packages | QA-01, P0 |
+| Push deployment watched a nonexistent branch (corrected) | Audited `.github/workflows/deploy.yml:6` watched `main`; local HEAD and GitHub branch list show only `master`; both recorded runs were `workflow_dispatch` | Pushes previously missed deployment; the trigger targets `master`, independently of the modernization packages. Verify the first push-triggered run | QA-01, P0 |
 
-Branch/run evidence checked on 2026-10-22: [branches](https://github.com/sergeydus/DitherIT/branches), manual run [20881990774](https://github.com/sergeydus/DitherIT/actions/runs/20881990774) and [21870731950](https://github.com/sergeydus/DitherIT/actions/runs/21870731950). The trigger correction is now applied locally and remains uncommitted; no push or deployment has been performed by this pass. Other findings continue to describe the unchanged application code.
+Branch/run evidence checked on 2026-10-22: [branches](https://github.com/sergeydus/DitherIT/branches), manual run [20881990774](https://github.com/sergeydus/DitherIT/actions/runs/20881990774) and [21870731950](https://github.com/sergeydus/DitherIT/actions/runs/21870731950). The push filter targets `master`; verify it on the first push-triggered run. This correction is independent of the modernization packages.
 
 ## Explicit product decisions after review
 

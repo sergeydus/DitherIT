@@ -1,115 +1,84 @@
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
-import { applyDithering, DitheringMethod } from '@/utils/dithering';
+import { useRef, useEffect } from 'react';
+import type { DitheringMethod } from '@/utils/dithering';
+import { useImageProcessor } from '@/hooks/useImageProcessor';
 
 export default function ImageDithering() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
-  const [originalImage, setOriginalImage] = useState<HTMLImageElement | null>(null);
-  const [ditheringMethod, setDitheringMethod] = useState<DitheringMethod>('floyd-steinberg');
-  const [bitDepth, setBitDepth] = useState<number>(4);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [applyBlur, setApplyBlur] = useState(false);
+  const downloads = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  const mounted = useRef(false);
+  const { processor, state } = useImageProcessor();
+  const originalImage = state.source;
+  const { method: ditheringMethod, bitsPerChannel: bitDepth, soften: applyBlur } = state.settings;
+  const isProcessing = state.status === 'opening' || state.status === 'processing';
+  const setDitheringMethod = (method: DitheringMethod) => processor.setSettings({ method });
+  const setBitDepth = (bitsPerChannel: number) => processor.setSettings({ bitsPerChannel }, true);
+  const setApplyBlur = (soften: boolean) => processor.setSettings({ soften });
 
-  // Load and display image
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        setOriginalImage(img);
-        drawImageToCanvas(img);
-      };
-      img.src = event.target?.result as string;
-    };
-    reader.readAsDataURL(file);
-  };
-
-  // Draw image to canvas
-  const drawImageToCanvas = (img: HTMLImageElement) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    if (!ctx) return;
-
-    // Set canvas size to match image
-    const maxWidth = 800;
-    const maxHeight = 600;
-    let width = img.width;
-    let height = img.height;
-
-    // Scale down if too large
-    if (width > maxWidth || height > maxHeight) {
-      const ratio = Math.min(maxWidth / width, maxHeight / height);
-      width *= ratio;
-      height *= ratio;
-    }
-
-    canvas.width = width;
-    canvas.height = height;
-
-    ctx.drawImage(img, 0, 0, width, height);
-  };
-
-  // Apply dithering effect
   useEffect(() => {
-    if (!originalImage || !canvasRef.current) return;
+    mounted.current = true;
+    const pendingDownloads = downloads.current;
+    return () => {
+      mounted.current = false;
+      for (const [url, timer] of pendingDownloads) { clearTimeout(timer); URL.revokeObjectURL(url); }
+      pendingDownloads.clear();
+    };
+  }, []);
 
+  useEffect(() => {
+    const frame = state.frame;
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    if (!ctx) return;
+    if (!frame || !canvas || frame !== processor.getSnapshot().frame) return;
+    canvas.width = frame.baseline.width;
+    canvas.height = frame.baseline.height;
+    const context = canvas.getContext('2d');
+    if (!context) return;
+    context.imageSmoothingEnabled = false;
+    context.drawImage(frame.resultView, 0, 0);
+  }, [processor, state.frame]);
 
-    // Redraw original image
-    drawImageToCanvas(originalImage);
-
-    // Get image data
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-
-    // Apply dithering in a setTimeout to prevent UI blocking
-    setTimeout(() => {
-      setIsProcessing(true);
-      const ditheredData = applyDithering(imageData, ditheringMethod, bitDepth);
-      ctx.putImageData(new ImageData(ditheredData.data, ditheredData.width, ditheredData.height), 0, 0);
-      setIsProcessing(false);
-    }, 10);
-  }, [originalImage, ditheringMethod, bitDepth]);
-
-  // Download processed image
-  const handleDownload = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    canvas.toBlob((blob) => {
-      if (!blob) return;
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `dithered-image-${ditheringMethod}-${bitDepth}bit.png`;
-      a.click();
-      URL.revokeObjectURL(url);
-    });
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.currentTarget.files ?? []);
+    event.currentTarget.value = '';
+    void processor.importFiles(files);
   };
+  const handleDownload = async () => {
+    try {
+      const { blob, filename } = await processor.exportPng();
+      if (!mounted.current) return;
+      const url = URL.createObjectURL(blob);
+      const timer = setTimeout(() => { URL.revokeObjectURL(url); downloads.current.delete(url); }, 60_000);
+      downloads.current.set(url, timer);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      try { link.click(); } finally { link.remove(); }
+    } catch { if (mounted.current) processor.reportFailure('export-failed'); }
+  };
+  const status = state.status === 'opening' ? 'Opening image…' : state.status === 'processing' ? 'Updating preview…' :
+    state.status === 'outdated' || state.status === 'error' ? 'Preview out of date' :
+    state.frame ? `Ready · Source ${state.frame.baseline.source.width} × ${state.frame.baseline.source.height} px → Output ${state.frame.baseline.width} × ${state.frame.baseline.height} px` : 'Choose an image to begin.';
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" role="region" aria-label="Image editor"
+      onDragOver={event => event.preventDefault()}
+      onDrop={event => { event.preventDefault(); void processor.importFiles(Array.from(event.dataTransfer.files)); }}>
       {/* Controls */}
       <div className="bg-gray-800 rounded-lg p-6 shadow-xl">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* File Upload */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label htmlFor="image-upload" className="block text-sm font-medium text-gray-300 mb-2">
               Upload Image
             </label>
             <input
               ref={fileInputRef}
+              id="image-upload"
               type="file"
-              accept="image/*"
+              accept=".png,.jpg,.jpeg,.webp,.gif,.avif,.bmp,image/png,image/jpeg,image/webp,image/gif,image/avif,image/bmp"
               onChange={handleImageUpload}
               className="block w-full text-sm text-gray-300
                 file:mr-4 file:py-2 file:px-4
@@ -123,10 +92,11 @@ export default function ImageDithering() {
 
           {/* Dithering Method */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label htmlFor="dithering-method" className="block text-sm font-medium text-gray-300 mb-2">
               Dithering Method
             </label>
             <select
+              id="dithering-method"
               value={ditheringMethod}
               onChange={(e) => setDitheringMethod(e.target.value as DitheringMethod)}
               className="block w-full px-4 py-2 bg-gray-700 text-white rounded-lg
@@ -145,10 +115,11 @@ export default function ImageDithering() {
 
           {/* Bit Depth */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Bit Depth: {bitDepth} bit ({Math.pow(Math.pow(2, bitDepth), 3).toLocaleString()} colors)
+            <label htmlFor="bit-depth" className="block text-sm font-medium text-gray-300 mb-2">
+              Bits per channel: {bitDepth} ({(2 ** bitDepth).toLocaleString()} levels/channel)
             </label>
             <input
+              id="bit-depth"
               type="range"
               min="1"
               max="8"
@@ -156,7 +127,7 @@ export default function ImageDithering() {
               onChange={(e) => setBitDepth(Number(e.target.value))}
               className="block w-full h-2 bg-gray-700 rounded-lg appearance-none
                 cursor-pointer accent-blue-600"
-              disabled={!originalImage}
+              disabled={!originalImage || ditheringMethod === 'none'}
             />
             <div className="flex justify-between text-xs text-gray-400 mt-1">
               <span>1 bit</span>
@@ -166,37 +137,58 @@ export default function ImageDithering() {
 
           {/* Blur Filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <h2 className="block text-sm font-medium text-gray-300 mb-2">
               Filters
-            </label>
+            </h2>
             <div className="flex items-center space-x-3">
               <input
                 type="checkbox"
                 id="blur-filter"
                 checked={applyBlur}
                 onChange={(e) => setApplyBlur(e.target.checked)}
-                disabled={!originalImage}
+                disabled={!originalImage || ditheringMethod === 'none'}
                 className="w-4 h-4 bg-gray-700 border border-gray-600 rounded
                   cursor-pointer accent-blue-600"
               />
               <label htmlFor="blur-filter" className="text-sm text-gray-300 cursor-pointer">
-                Apply Blur (1px)
+                Soften dither pattern (1 px)
               </label>
             </div>
+            <p className="text-xs text-gray-400 mt-2">Blur after dithering; adds intermediate colors and softens transparent edges.</p>
+          </div>
+          <div>
+            <label htmlFor="output-size" className="block text-sm font-medium text-gray-300 mb-2">Output size</label>
+            <select id="output-size" value={state.output.mode} disabled={!originalImage}
+              onChange={event => processor.setOutput({ mode: event.target.value as 'standard' | 'original' })}
+              className="block w-full px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600">
+              <option value="standard">Standard — up to 2048 px</option>
+              <option value="original">Original dimensions</option>
+            </select>
+            <p className="text-xs text-gray-400 mt-2">Standard caps the longest edge. Larger outputs take longer to render.</p>
           </div>
         </div>
+
+        <p className="mt-4 text-sm text-gray-400">PNG, JPEG, WebP, GIF, AVIF, BMP · up to 20 MiB · 16 megapixels · browser support varies.</p>
+        <p className="text-sm text-gray-400">Images stay in your browser. Animated images become a still image (first/default frame). You can also drop one image here.</p>
+        <p role="status" className="mt-4 text-sm text-gray-300">{status}</p>
+        {originalImage && <p className="text-sm text-gray-400 break-all">{originalImage.name}</p>}
+        {state.exporting && <p role="status" className="text-sm text-gray-300">Preparing PNG for {state.exportFilename}…</p>}
+        {state.error && <p role="alert" className="mt-2 text-sm text-red-300">{state.error}</p>}
+        {isProcessing && <button onClick={() => processor.cancel()} className="mt-3 px-4 py-2 rounded bg-gray-700 text-white">Cancel preview</button>}
+        {originalImage && (state.status === 'outdated' || state.status === 'error') &&
+          <button onClick={() => processor.retry()} className="mt-3 px-4 py-2 rounded bg-blue-600 text-white">Render preview</button>}
 
         {/* Download Button */}
         {originalImage && (
           <div className="mt-6 flex justify-center">
             <button
               onClick={handleDownload}
-              disabled={isProcessing}
+              disabled={!state.canExport}
               className="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg
                 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed
                 transition-colors duration-200 shadow-lg"
             >
-              {isProcessing ? 'Processing...' : 'Download Image'}
+              {state.exporting ? 'Preparing PNG…' : isProcessing ? 'Processing...' : 'Download Image'}
             </button>
           </div>
         )}
@@ -225,10 +217,10 @@ export default function ImageDithering() {
           ) : (
             <canvas
               ref={canvasRef}
+              role="img"
+              aria-label={state.frame ? `${state.frame.baseline.source.name}, ${state.frame.settings.method}, ${state.frame.baseline.width} by ${state.frame.baseline.height} pixels` : 'Image preview is processing'}
+              aria-busy={isProcessing}
               className="max-w-full h-auto rounded shadow-lg"
-              style={{
-                filter: applyBlur ? 'blur(1px)' : 'none',
-              }}
             />
           )}
         </div>

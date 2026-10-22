@@ -1,0 +1,31 @@
+# M1 — Import and lifecycle implementation
+
+M1 implements IN-01, PERF-01–02 and ARCH-01. The editor keeps its existing layout; the broader workspace redesign, presets, comparison controls, custom-width UI and accessibility release review remain in later packages.
+
+## Implementation
+
+- [Input preflight](../../src/lib/image-import.ts) reads at most 256 KiB, checks byte limits and raster signatures, and checks available header dimensions. PNG/JPEG/WebP/GIF/BMP dimensions are checked where available; AVIF and any unparsed dimensions are validated after decoding. Browser MIME and extensions are advisory. Limits are 20 MiB, 16 million decoded pixels, and 8192 px per side.
+- [The controller](../../src/lib/image-processor.ts) owns import/preparation/render identities, a controller-owned resized ImageBitmap baseline, the last committed Original/Result pair, render debounce, worker termination, retry and teardown. Effect jobs receive a structured clone of the baseline without transferring its ownership. Source/output changes prepare a new baseline; effect changes reuse it. Successful render jobs leave one idle worker available for reuse. Superseded active jobs, cancel, source replacement and teardown terminate it; job identity checks also reject duplicate replies after completion.
+- [Baseline](../../src/workers/baseline.worker.ts), [render](../../src/workers/processing.worker.ts) and [export](../../src/workers/export.worker.ts) workers handle decode/resize, pixel readback/transforms/writes, and PNG encoding. The UI only draws returned display bitmaps. Worker creation, context/API failures and crashes are recoverable, with no synchronous processing fallback or automatic restart loop.
+- [The React hook](../../src/hooks/useImageProcessor.ts) subscribes to the controller and cleans up resources on unmount, including Strict Mode reconnects. The existing editor exposes cancel/retry, errors/status, actual dimensions, Standard/Original output selection and file/drop import. Its blur checkbox now requests exported post-dither softening; CSS blur is removed.
+- Downloads use a separate immutable snapshot and worker, so later edits, source replacement and render cancellation do not cancel a clicked export. Blob URLs are revoked after a 60-second handoff grace period or teardown.
+- [PNG encoding](../../src/workers/png-encoder.ts) writes RGBA8 PNG chunks directly from committed bytes, using row filter None, `CompressionStream('deflate')` and CRC32. It uses no canvas, preserving RGB even at alpha 0 or 1. Display canvases may round semi-transparent RGB through premultiplied-alpha storage; the committed buffer and exported PNG remain authoritative.
+
+## Interpretation choices
+
+1. **M1/M2 overlap:** worker encoding and minimal output/soften controls are included to keep the existing import → preview → download flow consistent with ARCH-01. M2 still owns full settings/output UX and its complete acceptance review. No custom-width UI or comparison view is claimed here; their controller contracts are present for later use.
+2. **First/default animation frame:** use the stable File → createImageBitmap decoder result, without an animation parser or frame selector. Chromium selects the first animation frame of an APNG with a separate poster, while other decoders may select the poster. The UI and tests explicitly allow first/default behavior, prohibit timing-dependent later-frame capture, and check repeatability.
+3. **Validation versus decoding:** signatures are authoritative even if MIME/extension disagree. Header parsing is bounded; AVIF dimensions and some large/complex headers are deferred to the browser decoder. Decoding may allocate before the post-decode dimension check, as described in spec 03; full-size canvas/readback allocation follows validation.
+4. **Cancellation:** retain current settings and any completed reusable baseline; mark the result out of date and require Render preview (or another settings change). Canceling an unvalidated first import returns to the empty state. Failed replacements retain the last good source/result and its export eligibility.
+5. **Equal output dimensions:** selecting a different sizing mode that resolves to the same dimensions reuses the existing baseline/result. Preparation is keyed to effective dimensions, not the mode label.
+
+## Verification and rerunning
+
+- `npm test`: 119 Node tests, including M0 goldens, format/header boundaries, lifecycle/ownership, stale completions, idle-worker/cache reuse, explicit cancellation, export independence, operation cleanup and direct PNG encoding. The independent test decoder checks chunk CRCs and uses Node zlib to verify every alpha value (including nonzero RGB at alpha 0 and 1) against the input buffer byte for byte.
+- `npm run lint`, `npx tsc --noEmit`, `npm run build`.
+- Browser prerequisite: run `npx playwright install chromium`, or set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` to an installed Chromium-based browser such as Edge. After building, run `npm run test:browser`. Six smoke tests serve the actual `out` artifact at `/DitherIT/`, including narrow-screen editing, a 16 MP source with cached preparation across effect changes, synthetic raster/animation/orientation fixtures, idle-worker reuse and off-thread pixel/encode instrumentation. A partially transparent fixture with soften on is downloaded, decoded independently in Node and compared byte for byte with the controller's committed export snapshot, captured before transfer to the export worker.
+- Restricted Windows runners can start `node scripts/serve-static.mjs` separately and set `PLAYWRIGHT_REUSE_STATIC_SERVER=1`; stop that server after the suite. Ordinary runs let Playwright manage it.
+
+TypeScript excludes generated `out` files: Turbopack emits worker-source assets alongside its compiled worker chunks, and those generated TypeScript files must not be treated as project sources. Production worker chunks use same-origin blob bootstraps and resolve their JavaScript under `/DitherIT/_next/`.
+
+These checks establish behavior on one Chromium engine and desktop/narrow viewports. The recommended full browser/device matrix, p95/heap studies, NVDA/VoiceOver studies, axe and broader UI release gates remain outstanding. No accessibility conformance or mobile performance claim is made.

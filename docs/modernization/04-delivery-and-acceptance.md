@@ -23,13 +23,13 @@ This is the single requirement register. Every P0/P1 row needs implementation an
 
 | ID | Requirement | Priority | Work package | Acceptance tests | Implementation / required evidence |
 | --- | --- | --- | --- | --- | --- |
-| <a id="req-in-01"></a>IN-01 | Validated import, compatibility and recovery | P0 | M1 | [AC-06](#ac-06), [AC-07](#ac-07), [AC-17](#ac-17) | Pending |
+| <a id="req-in-01"></a>IN-01 | Validated import, compatibility and recovery | P0 | M1 | [AC-06](#ac-06), [AC-07](#ac-07), [AC-17](#ac-17) | [M1 implementation and verification](05-m1-implementation.md) |
 | <a id="req-img-01"></a>IMG-01 | True Original bypass | P0 | M0 | [AC-01](#ac-01) | [Pure core](../../src/utils/dithering.ts), [Node fixtures](../../src/utils/dithering.test.ts); browser/export checks Pending M2 |
-| <a id="req-img-02"></a>IMG-02 | Exported post-dither soften and alpha | P0 | M0 | [AC-02](#ac-02), [AC-04](#ac-04) | [Pure core](../../src/utils/dithering.ts), [Gaussian fixtures](../../src/utils/dithering.test.ts); UI/export integration Pending M1/M2 |
+| <a id="req-img-02"></a>IMG-02 | Exported post-dither soften and alpha | P0 | M0 | [AC-02](#ac-02), [AC-04](#ac-04) | [Pure core](../../src/utils/dithering.ts), [Gaussian fixtures](../../src/utils/dithering.test.ts), [M1 committed-buffer PNG smoke](../../tests/browser/m1.browser.ts); complete M2 acceptance review Pending |
 | <a id="req-img-03"></a>IMG-03 | Float diffusion against emitted bytes | P0 | M0 | [AC-03](#ac-03) | [Pure core](../../src/utils/dithering.ts), [byte-error/boundary fixtures](../../src/utils/dithering.test.ts) |
 | <a id="req-img-04"></a>IMG-04 | Depth-aware deterministic output | P0 | M0 | [AC-04](#ac-04), [AC-05](#ac-05) | [Pure core](../../src/utils/dithering.ts), [seed/depth fixtures](../../src/utils/dithering.test.ts); AC-05 UI workflow Pending M4 |
-| <a id="req-perf-01"></a>PERF-01 | Off-thread pixel work, baseline reuse and usable controls | P0 | M1 | [AC-09](#ac-09), [AC-21](#ac-21), [AC-23](#ac-23) | Pending |
-| <a id="req-perf-02"></a>PERF-02 | Supersession, cancel, stale-result protection | P0 | M1 | [AC-08](#ac-08), [AC-09](#ac-09), [AC-17](#ac-17) | Pending |
+| <a id="req-perf-01"></a>PERF-01 | Off-thread pixel work, baseline reuse and usable controls | P0 | M1 | [AC-09](#ac-09), [AC-21](#ac-21), [AC-23](#ac-23) | [M1 implementation and verification](05-m1-implementation.md); device p95 study recommended |
+| <a id="req-perf-02"></a>PERF-02 | Supersession, cancel, stale-result protection | P0 | M1 | [AC-08](#ac-08), [AC-09](#ac-09), [AC-17](#ac-17) | [M1 lifecycle and cleanup tests](../../src/lib/image-processor.test.ts) |
 | <a id="req-ux-01"></a>UX-01 | Responsive preview-first workspace | P1 | M3 | [AC-22](#ac-22) | Pending |
 | <a id="req-ux-02"></a>UX-02 | Sample and first-use guidance | P1 | M4 | [AC-13](#ac-13) | Pending |
 | <a id="req-ux-03"></a>UX-03 | Honest labeled settings and validation | P0 | M2 | [AC-10](#ac-10), [AC-20](#ac-20) | Pending |
@@ -41,7 +41,7 @@ This is the single requirement register. Every P0/P1 row needs implementation an
 | <a id="req-ui-02"></a>UI-02 | Product metadata and assets | P1 | M3 | [AC-19](#ac-19) | Pending |
 | <a id="req-a11y-01"></a>A11Y-01 | Core labels, keyboard and status semantics | P0 | M2 | [AC-20](#ac-20) | Pending |
 | <a id="req-a11y-02"></a>A11Y-02 | Accessible exploration and responsive visuals | P1 | M3, M4 | [AC-14](#ac-14), [AC-20](#ac-20), [AC-22](#ac-22) | Pending |
-| <a id="req-arch-01"></a>ARCH-01 | Client-only static architecture, worker/cache ownership | P0 | M1 | [AC-16](#ac-16), [AC-21](#ac-21), [AC-23](#ac-23) | Pending |
+| <a id="req-arch-01"></a>ARCH-01 | Client-only static architecture, worker/cache ownership | P0 | M1 | [AC-16](#ac-16), [AC-21](#ac-21), [AC-23](#ac-23) | [M1 implementation](05-m1-implementation.md), [static browser smoke suite](../../tests/browser/m1.browser.ts) |
 | <a id="req-arch-02"></a>ARCH-02 | Maintenance, user docs and production assets | P1 | M5 | [AC-16](#ac-16), [AC-18](#ac-18), [AC-19](#ac-19) | Pending |
 | <a id="req-qa-01"></a>QA-01 | CI regression gates and correct push branch | P0 | Independent trigger fix; CI in M0–M5 | [AC-16](#ac-16), [AC-18](#ac-18), [AC-20](#ac-20) | Push filter [targets master](../../.github/workflows/deploy.yml); remaining gates Pending |
 
@@ -69,7 +69,7 @@ This is the single requirement register. Every P0/P1 row needs implementation an
 | <a id="ac-18"></a>AC-18 (QA-01, ARCH-02) | Inspect/test updated CI event filters and gates without publishing | Push filter accepts `master`, not nonexistent `main`; manual dispatch retained; lint/type/tests/axe/static-path checks/build precede deploy; README documents actual defaults/formats/limits |
 | <a id="ac-19"></a>AC-19 (UI-02, ARCH-02) | Build and inspect page head, favicon and referenced assets | Product title/description, fonts, local product mark and sample assets load under the base path; no referenced assets removed |
 | <a id="ac-20"></a>AC-20 (A11Y-01–02) | Complete keyboard workflow; inspect labels/status/focus; run axe in empty/ready/busy/error and both themes | All controls named, Filters uses heading/legend, status/errors associated, no keyboard trap or obscured focus; no unresolved serious/critical axe findings |
-| <a id="ac-21"></a>AC-21 (PERF-01, ARCH-01) | Inspect/instrument render and export paths; simulate missing APIs | Resize/getImageData/putImageData and PNG encoding run in workers via OffscreenCanvas; UI only presents bitmaps; unsupported API errors actionable; no unrestricted synchronous fallback |
+| <a id="ac-21"></a>AC-21 (PERF-01, ARCH-01) | Inspect/instrument render and export paths; simulate missing APIs | Resize/getImageData/putImageData run in workers via OffscreenCanvas; PNG encoding runs directly from committed RGBA bytes in a worker via CompressionStream; UI only presents bitmaps; unsupported API errors actionable; no unrestricted synchronous fallback |
 | <a id="ac-22"></a>AC-22 (UX-01, UI-01, A11Y-02) | Representative states at narrow/desktop widths, zoom/text spacing, reduced motion and forced colors | No page-level horizontal overflow at 320 px; focus/controls/contrast readable in both themes; workspace hierarchy and tokens match spec |
 | <a id="ac-23"></a>AC-23 (PERF-01, ARCH-01, UX-05) | Instrument preparation on a 16 MP source; change depth/method/soften/seed repeatedly, terminate/restart effect workers, then change output dimensions/source | Effect-only changes do not decode or resize again; controller bitmap remains valid after worker termination and is cloned without transfer; Original comparison identity remains stable for the baseline key. Source/size changes prepare a new baseline once, reject stale preparation replies and switch aligned Original/Result together; obsolete cache entries close when unused |
 
@@ -83,7 +83,7 @@ At source-size Original, compare decoded pixels with the source buffer; for full
 
 ### M0 implementation boundary and interpretation choices
 
-The [pure RGBA core](../../src/utils/dithering.ts) accepts `{ width, height, data }` and optional `{ seed, soften }`; it returns separately owned RGBA bytes without browser APIs. The [Node fixtures](../../src/utils/dithering.test.ts) cover the pixel-processing portions of AC-01–04. Browser decoding, PNG parity and UI workflows remain integration checks for later packages. The component only wraps returned bytes in ImageData; its existing CSS blur remains until the new soften option is wired in M1/M2.
+The [pure RGBA core](../../src/utils/dithering.ts) accepts `{ width, height, data }` and optional `{ seed, soften }`; it returns separately owned RGBA bytes without browser APIs. The [Node fixtures](../../src/utils/dithering.test.ts) cover the pixel-processing portions of AC-01–04. [M1 integration](05-m1-implementation.md) runs the core in a worker, wires pixel softening instead of CSS blur, and adds decoding/PNG parity smoke checks. Full settings/output and broader UI acceptance remain in later packages.
 
 - `ALGORITHM_VERSION = 1` identifies the first pure contract. Random uses Mulberry32, defaults to unsigned 32-bit seed 0, and consumes one draw per RGB channel at every pixel, including fully transparent ones; alpha consumes none. This keeps the noise sequence stable when only an alpha mask changes.
 - Transparent/off-image diffusion destinations lose their weights without renormalization. Hidden RGB is preserved when soften is off; fully transparent pixels neither receive nor emit diffusion error. Partially transparent pixels process straight RGB and retain alpha before soften.
@@ -117,7 +117,7 @@ These studies do not block release merely because unavailable. Record unperforme
 
 ## Build and deployment verification
 
-CI should install from the lockfile, run ESLint, perform explicit TypeScript checking, run algorithm/lifecycle/workflow suites and accessibility checks, then build the static artifact. Available scripts are `dev`, `build`, `start`, `lint`, and `test` (the pure Node fixture suite). Lifecycle/browser/axe suites and CI wiring remain separate implementation work.
+CI should install from the lockfile, run ESLint, perform explicit TypeScript checking, run algorithm/lifecycle/workflow suites and accessibility checks, then build the static artifact. Available scripts include `test` (Node fixtures/lifecycle/worker-operation tests), `test:browser` (production static smoke tests) and `bench` (manual only), alongside `dev`, `build`, `start`, and `lint`. Axe and CI wiring remain separate implementation work.
 
 Serve `out` through a local static server mounted under the production base path. Check direct navigation, refresh, fonts, favicon, sample load, module worker startup, image import, error recovery, comparison, and PNG download. Verify no hardcoded root paths or dependency on runtime Next.js server features. Publishing to Pages is a separate operational action, not part of these specs.
 
