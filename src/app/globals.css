@@ -173,6 +173,23 @@ fieldset legend { margin-bottom: 4px; }
 .empty-actions { justify-content: center; margin: 24px 0 16px; }
 .variation-control { margin-top: 12px; }
 .variation-control button { margin-top: 8px; }
+.control-label { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.control-label > label { margin-bottom: 0; min-width: 0; }
+.control-label.inline-help { justify-content: flex-start; }
+.action-help { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.action-help > .button { flex: 1; min-width: 0; }
+.help-trigger { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; padding: 4px; color: var(--text-muted); background: transparent; border: 1px solid transparent; border-radius: 8px; }
+.help-trigger > span { display: grid; place-items: center; width: 1.375em; height: 1.375em; border: 1px solid currentColor; border-radius: 50%; font-size: .875rem; font-weight: 600; line-height: 1; }
+.help-trigger:hover:not(:disabled), .help-trigger[aria-expanded="true"] { color: var(--accent); background: var(--surface-muted); }
+.help-popover { position: fixed; z-index: 100; width: min(22rem, calc(100vw - 24px)); overflow: auto; overscroll-behavior: contain; padding: 16px; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 8px 32px #0003; font-size: .875rem; line-height: 1.6; overflow-wrap: anywhere; }
+.help-popover-heading { display: flex; align-items: start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.help-popover-heading h3 { min-width: 0; }
+.help-popover-heading button { flex-shrink: 0; }
+@media (forced-colors: active) {
+  .help-trigger { color: ButtonText; }
+  .help-trigger:hover:not(:disabled), .help-trigger[aria-expanded="true"] { color: Highlight; background: Canvas; }
+  .help-popover { border-color: CanvasText; box-shadow: none; }
+}
 @media (max-width: 639px) {
   .image-viewport { margin: 0 16px; }
   .preview-controls { padding: 16px 16px 0; }

@@ -15,12 +15,11 @@ const pixels = async (canvas: Locator) => canvas.evaluate(async element => {
   await new Promise(requestAnimationFrame);
   const c = element as HTMLCanvasElement; return [...c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data];
 });
-async function tabTo(page: Page, target: Locator) {
-  for (let step = 0; step < 60; step++) {
-    if (await target.evaluate(element => element === document.activeElement)) return;
+async function expectTabs(page: Page, targets: Locator[]) {
+  for (const target of targets) {
     await page.keyboard.press('Tab');
+    await expect(target).toBeFocused();
   }
-  await expect(target).toBeFocused();
 }
 const download = async (page: Page) => {
   const event = page.waitForEvent('download'); await page.getByRole('button', { name: 'Export PNG' }).click();
@@ -204,18 +203,22 @@ test('AC-14: 1:1 detail centers small images without upscaling and never renders
 });
 
 test('AC-14/20: keyboard-only comparison, split, zoom, pan and exact detail crop; stale labeling', async ({ page }) => {
+  const help = (topic: string) => page.getByRole('button', { name: `Help: ${topic}`, exact: true });
+  const button = (name: string) => page.getByRole('button', { name, exact: true });
   await open(page, 'large.png'); const before = await count(page);
-  await tabTo(page, page.getByRole('radio', { name: 'Result', exact: true }));
+  await expectTabs(page, [page.getByRole('link', { name: 'Skip to image editor' })]);
+  await page.keyboard.press('Enter'); await expect(page.getByRole('region', { name: 'Image editor' })).toBeFocused();
+  await expectTabs(page, [button('Replace image'), page.getByRole('region', { name: 'Image viewport', exact: true }), help('Comparing images'), page.getByRole('radio', { name: 'Result', exact: true })]);
   await page.keyboard.press('ArrowRight'); await expect(page.getByRole('radio', { name: 'Split', exact: true })).toBeChecked();
-  await page.keyboard.press('Tab'); await expect(page.locator('#comparison-position')).toBeFocused(); await page.keyboard.press('End');
-  await tabTo(page, page.getByRole('button', { name: '100%', exact: true })); await page.keyboard.press('Enter');
-  await tabTo(page, page.getByRole('button', { name: 'Pan right', exact: true })); await page.keyboard.press('Space');
-  await tabTo(page, page.getByLabel('1:1 detail', { exact: true })); await page.keyboard.press('Space');
-  await tabTo(page, page.getByLabel('Detail horizontal position (px)')); await page.keyboard.press('ControlOrMeta+A'); await page.keyboard.type('0'); await page.keyboard.press('Enter');
-  await tabTo(page, page.getByLabel('Detail vertical position (px)')); await page.keyboard.press('ControlOrMeta+A'); await page.keyboard.type('0'); await page.keyboard.press('Enter');
+  await expectTabs(page, [page.locator('#comparison-position')]); await page.keyboard.press('End');
+  await expectTabs(page, [help('Preview zoom'), page.locator('#zoom-level'), button('Fit'), button('100%')]); await page.keyboard.press('Enter');
+  await expectTabs(page, [button('Zoom out'), button('Zoom in'), button('Pan left'), button('Pan right')]); await page.keyboard.press('Space');
+  await expectTabs(page, [button('Pan up'), button('Pan down'), page.getByLabel('1:1 detail', { exact: true })]); await page.keyboard.press('Space');
+  await expectTabs(page, [help('Detail inspection'), page.getByLabel('Detail horizontal position (px)')]); await page.keyboard.press('ControlOrMeta+A'); await page.keyboard.type('0'); await page.keyboard.press('Enter');
+  await expectTabs(page, [page.getByLabel('Detail vertical position (px)')]); await page.keyboard.press('ControlOrMeta+A'); await page.keyboard.type('0'); await page.keyboard.press('Enter');
   const reference = await main(page).evaluate(element => [...(element as HTMLCanvasElement).getContext('2d')!.getImageData(0, 0, 160, 160).data]);
   expect(await pixels(page.locator('.detail-canvas'))).toEqual(reference);
-  await tabTo(page, page.getByRole('button', { name: 'Move detail right', exact: true })); await page.keyboard.press('Enter');
+  await expectTabs(page, [button('Move detail right')]); await page.keyboard.press('Enter');
   await expect(page.getByLabel('Detail horizontal position (px)')).toHaveValue('16');
   expect(await count(page)).toEqual(before);
   await page.evaluate(() => { (window as unknown as ProbeWindow).__probe.holdRender = true; });

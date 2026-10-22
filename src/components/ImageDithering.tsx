@@ -9,6 +9,8 @@ import { METHODS, colorSummary, settingsSummary } from '@/lib/editor-copy';
 import { CommittedNumberInput } from './CommittedNumberInput';
 import { ImagePreview } from './ImagePreview';
 import { PRESETS, nextSeed, type Preset } from '@/lib/exploration';
+import { HelpPopover } from './HelpPopover';
+import { HELP } from '@/lib/help-copy';
 
 const control = 'control';
 const button = 'button';
@@ -172,7 +174,7 @@ export default function ImageDithering() {
           <div className="panel-heading"><h2 id="settings-heading">Look</h2><span className="eyebrow">RGB</span></div>
           <p id="settings-help" className={source ? 'sr-only' : 'helper'}>{source ? 'Adjust the look and output size below.' : 'Choose an image to enable settings and output controls.'}</p>
           <div className="inspector-section">
-            <label htmlFor="preset">Preset</label>
+            <div className="control-label"><label htmlFor="preset">Preset</label><HelpPopover topic="Presets">{HELP.presets}</HelpPopover></div>
             <select id="preset" className="control" disabled={!source} value={preset} aria-describedby="preset-help" onChange={event => {
               const selected = event.target.value as keyof typeof PRESETS;
               const { method, bitsPerChannel, soften } = PRESETS[selected];
@@ -182,7 +184,7 @@ export default function ImageDithering() {
             <p id="preset-help" className="helper">Presets retain RGB color and keep your output dimensions.</p>
           </div>
           <div className="inspector-section">
-            <label htmlFor="dithering-method">Dithering Method</label>
+            <div className="control-label"><label htmlFor="dithering-method">Dithering Method</label><HelpPopover topic="Dithering styles">{`${HELP.method} Selected: ${METHODS[method].name}. ${METHODS[method].description}`}</HelpPopover></div>
             <select id="dithering-method" value={method} disabled={!source} className={control} aria-describedby="method-help settings-help"
               onChange={event => manualSettings({ method: event.target.value as DitheringMethod })}>
               {Object.entries(METHODS).map(([value, item]) => <option key={value} value={value}>{item.name}</option>)}
@@ -190,31 +192,31 @@ export default function ImageDithering() {
             <p id="method-help" className="helper">{METHODS[method].description}</p>
             {method === 'random' && <div className="variation-control">
               <p id="random-seed" className="helper numeric">Seed: {state.settings.seed}</p>
-              <button className="button button-quiet" disabled={!source} aria-describedby="random-seed" onClick={() => {
+              <div className="action-help"><button className="button button-quiet" disabled={!source} aria-describedby="random-seed" onClick={() => {
                 const seed = nextSeed(state.settings.seed); setPreset('custom'); setNotice(''); setVariation(seed); processor.setSettings({ seed });
-              }}>New variation</button>
+              }}>New variation</button><HelpPopover topic="New grain">{HELP.variation}</HelpPopover></div>
               {bits === 8 && <p className="helper">8-bit output bypasses noise; the seed affects lower bit depths.</p>}
             </div>}
           </div>
           <div className="inspector-section">
-            <label htmlFor="bit-depth">Bits per channel: <span className="numeric">{bits}</span></label>
+            <div className="control-label"><label htmlFor="bit-depth">Bits per channel: <span className="numeric">{bits}</span></label><HelpPopover topic="Color depth">{HELP.bits}</HelpPopover></div>
             <input id="bit-depth" type="range" min="1" max="8" step="1" value={bits} disabled={!source || bypassed}
               aria-valuetext={`${bits} bits per channel, ${2 ** bits} levels per channel`} aria-describedby="color-summary depth-help bypass-help"
               onChange={event => manualSettings({ bitsPerChannel: Number(event.target.value) }, true)} className="depth-slider" />
             <CommittedNumberInput key={`bits-${resetKey}`} id="bit-depth-number" label="Bits per channel (number)" value={bits} min={1} max={8}
-              disabled={!source || bypassed} describedBy="color-summary depth-help bypass-help"
-              onCommit={bitsPerChannel => { if (bitsPerChannel !== bits) manualSettings({ bitsPerChannel }); }} />
+              disabled={!source || bypassed} describedBy="color-summary depth-help bypass-help" commitOnChange
+              onCommit={bitsPerChannel => { if (bitsPerChannel !== bits) manualSettings({ bitsPerChannel }, true); }} />
             <p id="color-summary" className="helper numeric">{colorSummary(bits)}</p>
             <p id="depth-help" className="helper">Pre-soften RGB upper bound, excluding alpha; not PNG file bit depth or a guarantee of unique colors.
               {soften && !bypassed && ' Before softening; final image may contain more colors.'}</p>
           </div>
           <fieldset className="inspector-section" aria-describedby="soften-help bypass-help">
             <legend>Filters</legend>
-            <label htmlFor="blur-filter" className="check-row">
+            <div className="control-label"><label htmlFor="blur-filter" className="check-row">
               <input id="blur-filter" type="checkbox" checked={soften} disabled={!source || bypassed} aria-describedby="soften-help bypass-help"
                 onChange={event => manualSettings({ soften: event.target.checked })} />
               <span>Soften dither pattern</span>
-            </label>
+            </label><HelpPopover topic="Softening">{HELP.soften}</HelpPopover></div>
             <p id="soften-help" className="helper">Apply a 1 px blur after dithering, at output resolution. Adds intermediate colors and softens transparent edges.</p>
           </fieldset>
           <p id="bypass-help" className={bypassed ? 'helper' : 'sr-only'}>{bypassed ? 'Color reduction and softening are bypassed. Their values are retained; output sizing still applies.' : 'Bits and soften apply to the selected dithering method.'}</p>
@@ -223,7 +225,7 @@ export default function ImageDithering() {
           <p id="reset-help" className="sr-only">Floyd–Steinberg, 4 bits/channel, soften off, Standard output. Keeps your image.</p>
           <section className="output-section" aria-labelledby="output-heading">
             <h2 id="output-heading">Output</h2>
-            <label htmlFor="output-size">Output size</label>
+            <div className="control-label"><label htmlFor="output-size">Output size</label><HelpPopover topic="Image dimensions">{HELP.size}</HelpPopover></div>
             <select id="output-size" value={state.output.mode} disabled={!source} className={control} aria-describedby="output-help settings-help"
               onChange={event => {
                 if (event.target.value === 'custom' && source && size) {

@@ -10,12 +10,11 @@ const ready = async (page: Page) => expect(page.getByRole('button', { name: 'Exp
 const open = async (page: Page, name = 'still.png') => { await page.getByLabel('Upload Image').setInputFiles(fixture(name)); await ready(page); };
 const number = (page: Page) => page.getByLabel('Bits per channel (number)', { exact: true });
 const commit = async (input: Locator, value: string) => { await input.fill(value); await input.press('Enter'); };
-async function tabTo(page: Page, target: Locator) {
-  for (let step = 0; step < 24; step++) {
-    if (await target.evaluate(element => element === document.activeElement)) return;
-    await page.keyboard.press('Tab');
+async function expectTabs(page: Page, targets: Locator[], key = 'Tab') {
+  for (const target of targets) {
+    await page.keyboard.press(key);
+    await expect(target).toBeFocused();
   }
-  await expect(target).toBeFocused();
 }
 
 test.beforeEach(async ({ page }) => { await installWorkerProbe(page); await page.goto('./'); await expect(page.getByRole('region', { name: 'Image source', exact: true }).getByRole('button', { name: 'Choose image', exact: true })).toBeEnabled(); });
@@ -69,6 +68,30 @@ test('AC-10: native depth controls, committed validation, Original retention and
   await expect(page.getByLabel('Output size')).toHaveValue('standard');
   await expect(page.getByRole('status')).toContainText('Settings reset.');
   await expect(page.getByRole('button', { name: 'Reset settings' })).toBeFocused();
+});
+
+test('numeric depth applies while focused; invalid drafts and unchanged commits do not render', async ({ page }) => {
+  await open(page);
+  const renders = () => page.evaluate(() => (window as unknown as ProbeWindow).__probe.sent.render);
+  const before = await renders();
+  await number(page).fill('5');
+  await expect(number(page)).toBeFocused(); await expect(page.locator('#bit-depth')).toHaveValue('5');
+  await expect(page.locator('#color-summary')).toHaveText('32 levels/channel · up to 32,768 RGB colors');
+  await ready(page); expect(await renders()).toBe(before + 1);
+  await number(page).press('Enter'); await number(page).press('Tab');
+  expect(await renders()).toBe(before + 1);
+  await number(page).focus(); await number(page).press('ArrowUp');
+  await expect(number(page)).toBeFocused(); await expect(page.locator('#bit-depth')).toHaveValue('6');
+  await ready(page); expect(await renders()).toBe(before + 2);
+  await number(page).fill(''); await expect(number(page)).toHaveValue('');
+  await expect(page.locator('#bit-depth')).toHaveValue('6');
+  for (const invalid of ['9', '1.5', '']) {
+    await number(page).fill(invalid); await expect(page.locator('#bit-depth')).toHaveValue('6');
+    await expect(page.locator('#preview-status')).toHaveText('Ready');
+    await number(page).press('Enter'); await expect(number(page)).toHaveValue('6');
+    await expect(number(page)).toHaveAttribute('aria-invalid', 'true');
+    expect(await renders()).toBe(before + 2);
+  }
 });
 
 test('AC-11: exact Standard/Original/Custom PNG dimensions and width recovery', async ({ page }) => {
@@ -181,25 +204,33 @@ test('AC-12/20: debounce prevents uncommitted export; render errors stay inline 
 });
 
 test('AC-20: keyboard-only import, controls, invalid recovery, reset and export preserve focus', async ({ page }) => {
+  const help = (topic: string) => page.getByRole('button', { name: `Help: ${topic}`, exact: true });
+  const button = (name: string) => page.getByRole('button', { name, exact: true });
   await page.keyboard.press('Tab'); await expect(page.getByRole('link', { name: 'Skip to image editor' })).toBeFocused();
   await page.keyboard.press('Enter'); await expect(page.getByRole('region', { name: 'Image editor' })).toBeFocused();
-  await tabTo(page, page.getByRole('region', { name: 'Image source', exact: true }).getByRole('button', { name: 'Choose image', exact: true }));
+  await expectTabs(page, [page.getByRole('region', { name: 'Image source', exact: true }).getByRole('button', { name: 'Choose image', exact: true })]);
   const choosing = page.waitForEvent('filechooser'); await page.keyboard.press('Enter'); await (await choosing).setFiles(fixture()); await ready(page);
-  await tabTo(page, page.getByLabel('Dithering Method'));
+  await expectTabs(page, [
+    page.getByRole('region', { name: 'Image viewport', exact: true }),
+    help('Comparing images'), page.getByRole('radio', { name: 'Result', exact: true }),
+    help('Preview zoom'), page.locator('#zoom-level'), button('Fit'), button('100%'), button('Zoom out'), button('Zoom in'),
+    page.getByLabel('1:1 detail', { exact: true }), help('Detail inspection'),
+    help('Presets'), page.getByLabel('Preset', { exact: true }), help('Dithering styles'), page.getByLabel('Dithering Method'),
+  ]);
   await page.keyboard.press('Home'); await page.keyboard.press('ArrowDown'); await page.keyboard.press('ArrowDown'); await ready(page);
   await expect(page.getByLabel('Dithering Method')).toHaveValue('atkinson'); await expect(page.getByLabel('Dithering Method')).toBeFocused();
-  await page.keyboard.press('Tab'); await expect(page.locator('#bit-depth')).toBeFocused(); await page.keyboard.press('Home'); await ready(page);
+  await expectTabs(page, [help('Color depth'), page.locator('#bit-depth')]); await page.keyboard.press('Home'); await ready(page);
   await page.keyboard.press('Tab'); await expect(number(page)).toBeFocused();
   await page.keyboard.press('ControlOrMeta+A'); await page.keyboard.type('9'); await page.keyboard.press('Enter');
   await expect(number(page)).toHaveValue('1'); await expect(number(page)).toHaveAttribute('aria-invalid', 'true');
   await page.keyboard.press('ControlOrMeta+A'); await page.keyboard.type('4'); await page.keyboard.press('Tab'); await ready(page);
   await expect(page.getByLabel('Soften dither pattern', { exact: true })).toBeFocused(); await page.keyboard.press('Space'); await ready(page);
-  await page.keyboard.press('Tab'); await expect(page.getByRole('button', { name: 'Reset settings' })).toBeFocused();
-  await page.keyboard.press('Tab'); await expect(page.getByLabel('Output size')).toBeFocused(); await page.keyboard.press('End');
-  await page.keyboard.press('Tab'); await expect(page.getByLabel('Custom width (px)')).toBeFocused();
+  await expectTabs(page, [help('Softening'), button('Reset settings'), help('Image dimensions'), page.getByLabel('Output size')]); await page.keyboard.press('End');
+  await expectTabs(page, [page.getByLabel('Custom width (px)')]);
   await page.keyboard.press('ControlOrMeta+A'); await page.keyboard.type('4'); await page.keyboard.press('Enter'); await ready(page);
-  await tabTo(page, page.getByRole('button', { name: 'Reset settings' })); await page.keyboard.press('Enter'); await ready(page);
-  await tabTo(page, page.getByRole('button', { name: 'Export PNG' }));
+  await expectTabs(page, [page.getByLabel('Output size'), help('Image dimensions'), button('Reset settings')], 'Shift+Tab');
+  await page.keyboard.press('Enter'); await ready(page);
+  await expectTabs(page, [help('Image dimensions'), page.getByLabel('Output size'), button('Export PNG')]);
   const downloading = page.waitForEvent('download'); await page.keyboard.press('Enter'); await downloading;
   await expect(page.getByRole('button', { name: 'Export PNG' })).toBeFocused();
   await expect(page.getByRole('status')).toHaveCount(1);

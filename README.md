@@ -14,6 +14,7 @@ The [specifications and requirements matrix](docs/modernization/04-delivery-and-
 - Balanced, Classic texture, Ordered texture and Soft grain presets. Random uses a stable seed; New variation explicitly changes it.
 - Original / Result / Split comparison, Fit and 25–400% zoom, keyboard pan controls and a 160 × 160 px 1:1 detail pane.
 - Responsive workspace, System/Light/Dark themes, labelled native controls, keyboard workflows and a locally bundled [CC0 sample](public/samples/README.md).
+- Contextual **?** buttons explain dithering settings, output sizing and preview inspection, including disabled settings. Help works with keyboard and touch; Escape, Close or clicking outside dismisses it.
 - Interruptible worker rendering with a reusable resized baseline. Cancel retains settings and the last preview; Render preview applies the current settings.
 - PNG export from the committed RGBA bytes, including partial transparency and softening. An export already started finishes its snapshot even if you keep editing. Comparison overlays and zoom never enter the PNG.
 

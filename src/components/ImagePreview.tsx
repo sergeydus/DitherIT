@@ -6,6 +6,8 @@ import type { ImageProcessor } from '@/lib/image-processor';
 import { clamp, detailRect, fitScale, nextZoom, ZOOMS, type PreviewView, type Zoom } from '@/lib/exploration';
 import { settingsSummary } from '@/lib/editor-copy';
 import { CommittedNumberInput } from './CommittedNumberInput';
+import { HelpPopover } from './HelpPopover';
+import { HELP } from '@/lib/help-copy';
 
 type Crop = ReturnType<typeof detailRect>;
 function paint(context: CanvasRenderingContext2D, frame: CommittedRender, view: PreviewView, split: number, crop: Crop, dx = 0, dy = 0) {
@@ -102,7 +104,7 @@ export function ImagePreview({ frame, stale, getSnapshot }: { frame: CommittedRe
       </div> : <p className="helper">No preview rendered yet.</p>}
     </div>
     {frame && <div className="preview-controls">
-      <fieldset className="view-group" disabled={!frame}><legend>Comparison view</legend>
+      <fieldset className="view-group" disabled={!frame} aria-labelledby="comparison-label"><legend><span id="comparison-label">Comparison view</span> <HelpPopover topic="Comparing images">{HELP.compare}</HelpPopover></legend>
         <div className="view-options">{(['original', 'result', 'split'] as const).map(option => <label key={option}>
           <input type="radio" name="preview-view" value={option} checked={view === option} onChange={() => setView(option)} />
           {option[0].toUpperCase() + option.slice(1)}</label>)}</div>
@@ -113,7 +115,7 @@ export function ImagePreview({ frame, stale, getSnapshot }: { frame: CommittedRe
         <p className="helper">Original on the left; result on the right.</p>
       </div>}
       <div className="zoom-controls" role="group" aria-label="Zoom controls">
-        <div><label htmlFor="zoom-level">Zoom level</label><select id="zoom-level" className="control" value={zoom} disabled={!frame}
+        <div><div className="control-label"><label htmlFor="zoom-level">Zoom level</label><HelpPopover topic="Preview zoom">{HELP.zoom}</HelpPopover></div><select id="zoom-level" className="control" value={zoom} disabled={!frame}
           onChange={event => changeZoom(event.target.value === 'fit' ? 'fit' : Number(event.target.value))}>
           <option value="fit">Fit</option>{ZOOMS.map(value => <option key={value} value={value}>{value * 100}%</option>)}
         </select></div>
@@ -132,7 +134,7 @@ export function ImagePreview({ frame, stale, getSnapshot }: { frame: CommittedRe
         <button className="button button-quiet" disabled={!frame || scroll.top >= maxY - 1} onClick={() => pan(0, 1)}>Pan down</button>
       </div>
       <p id="inspection-help" className="helper">Fit can hide or alias the dither pattern. Inspect at 1:1. The image viewport also supports normal keyboard scrolling.</p>
-      <label className="check-row" htmlFor="detail-toggle"><input id="detail-toggle" type="checkbox" checked={detailOn} disabled={!frame} onChange={event => setDetailOn(event.target.checked)} />1:1 detail</label>
+      <div className="control-label inline-help"><label className="check-row" htmlFor="detail-toggle"><input id="detail-toggle" type="checkbox" checked={detailOn} disabled={!frame} onChange={event => setDetailOn(event.target.checked)} />1:1 detail</label><HelpPopover topic="Detail inspection">{HELP.detail}</HelpPopover></div>
       {detailOn && <section className="detail-section" aria-labelledby="detail-heading">
         <h3 id="detail-heading">1:1 detail{stale ? ' · Preview out of date' : ''}</h3>
         <canvas ref={detail} className="detail-canvas" width="160" height="160" role="img" aria-label={`1:1 detail, ${view} view${stale ? ', preview out of date' : ''}`} />

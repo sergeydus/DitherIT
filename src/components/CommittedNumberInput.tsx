@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 
-export function CommittedNumberInput({ id, label, value, min, max, disabled, describedBy, onCommit }: {
+export function CommittedNumberInput({ id, label, value, min, max, disabled, describedBy, commitOnChange = false, onCommit }: {
   id: string; label: string; value: number; min: number; max: number; disabled?: boolean;
   describedBy?: string; onCommit: (value: number) => void;
+  commitOnChange?: boolean;
 }) {
   const [draft, setDraft] = useState({ base: value, text: String(value), error: '' });
   // A slider, reset or source replacement supersedes any draft based on an older value.
@@ -28,7 +29,13 @@ export function CommittedNumberInput({ id, label, value, min, max, disabled, des
     <input id={id} type="number" min={min} max={max} step="1" disabled={disabled}
       value={current.text} aria-invalid={current.error ? true : undefined}
       aria-describedby={[describedBy, current.error ? `${id}-error` : ''].filter(Boolean).join(' ') || undefined}
-      onChange={event => setDraft({ base: value, text: event.target.value, error: '' })}
+      onChange={event => {
+        const text = event.target.value, number = Number(text);
+        if (commitOnChange && text.trim() !== '' && Number.isInteger(number) && number >= min && number <= max) {
+          setDraft({ base: number, text, error: '' });
+          if (number !== value) onCommit(number);
+        } else setDraft({ base: value, text, error: '' });
+      }}
       onBlur={commit} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); commit(); } }}
       className="control numeric" />
     {current.error && <p id={`${id}-error`} className="error">{current.error}</p>}
