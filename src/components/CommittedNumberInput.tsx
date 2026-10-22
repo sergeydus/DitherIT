@@ -24,13 +24,13 @@ export function CommittedNumberInput({ id, label, value, min, max, disabled, des
     onCommit(number);
   };
   return <div>
-    <label htmlFor={id} className="block text-sm font-medium text-gray-300 mb-2">{label}</label>
+    <label htmlFor={id}>{label}</label>
     <input id={id} type="number" min={min} max={max} step="1" disabled={disabled}
       value={current.text} aria-invalid={current.error ? true : undefined}
       aria-describedby={[describedBy, current.error ? `${id}-error` : ''].filter(Boolean).join(' ') || undefined}
       onChange={event => setDraft({ base: value, text: event.target.value, error: '' })}
       onBlur={commit} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); commit(); } }}
-      className="block w-full min-h-11 px-3 py-2 bg-gray-700 text-white rounded-lg border border-gray-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-300" />
-    {current.error && <p id={`${id}-error`} className="mt-2 text-sm text-red-300">{current.error}</p>}
+      className="control numeric" />
+    {current.error && <p id={`${id}-error`} className="error">{current.error}</p>}
   </div>;
 }

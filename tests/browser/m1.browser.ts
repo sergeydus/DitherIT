@@ -75,7 +75,7 @@ test('production chunks, cached baseline, worker softening and PNG snapshot work
   expect(Array.from(decoded.pixels)).toEqual(committed.pixels);
   expect(committed.pixels.some((value, index) => index % 4 === 3 && value > 0 && value < 255)).toBe(true);
   expect(after.sent.export).toBe(1); expect(after.pixelOps).toBe(0); expect(uploads).toEqual([]); expect(errors).toEqual([]);
-  await page.reload(); await expect(page.getByLabel('Upload Image')).toBeVisible();
+  await page.reload(); await expect(page.getByRole('button', { name: 'Choose image', exact: true })).toBeVisible();
 });
 
 test('supported rasters use stable default/first frames and oriented dimensions', async ({ page }) => {
@@ -122,7 +122,7 @@ test('invalid replacements retain good result; multi-file drops have recovery gu
 test('cancel keeps settings and baseline, retry works, Standard output is disclosed on a narrow screen', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByLabel('Upload Image').setInputFiles(fixture('large.png')); await ready(page);
-  await expect(page.locator('#export-summary')).toContainText('Source 2400 × 1600 px → PNG 2048 × 1365 px');
+  await expect(page.locator('#export-summary')).toContainText('PNG 2048 × 1365 px');
   await page.getByLabel('Soften dither pattern').check();
   await page.getByRole('button', { name: 'Cancel preview' }).click();
   await expect(page.locator('#preview-status')).toHaveText('Preview out of date');
@@ -137,7 +137,7 @@ test('cancel keeps settings and baseline, retry works, Standard output is disclo
 
 test('a 16 MP source reuses preparation across depth, method and soften changes', async ({ page }) => {
   await page.getByLabel('Upload Image').setInputFiles(fixture('limit-16mp.jpg')); await ready(page);
-  await expect(page.locator('#export-summary')).toContainText('Source 4000 × 4000 px → PNG 2048 × 2048 px');
+  await expect(page.locator('#export-summary')).toContainText('PNG 2048 × 2048 px');
   await page.getByLabel('Dithering Method').selectOption('atkinson'); await ready(page);
   await page.locator('#bit-depth').focus(); await page.locator('#bit-depth').press('Home'); await ready(page);
   await page.getByLabel('Soften dither pattern').check(); await ready(page);
@@ -151,5 +151,5 @@ test('worker startup failure is actionable and import remains available', async 
   await page.reload();
   await page.getByLabel('Upload Image').setInputFiles(fixture('still.png'));
   await expect(page.getByRole('region', { name: 'Image editor' }).getByRole('alert')).toContainText('isn’t available');
-  await expect(page.getByLabel('Upload Image')).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Choose image', exact: true })).toBeEnabled();
 });

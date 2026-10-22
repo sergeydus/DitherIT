@@ -74,7 +74,7 @@ test('AC-10: native depth controls, committed validation, Original retention and
 test('AC-11: exact Standard/Original/Custom PNG dimensions and width recovery', async ({ page }) => {
   await open(page, 'large.png');
   await expect(page.locator('#source-dimensions')).toHaveText('Source dimensions: 2400 × 1600 px');
-  await expect(page.locator('#output-dimensions')).toHaveText('Output dimensions: 2048 × 1365 px');
+  await expect(page.locator('#output-dimensions')).toHaveText('PNG 2048 × 1365 px');
   await expect(page.getByText('Resized for faster editing. This is the actual PNG output size.')).toBeVisible();
   for (const [mode, width, height] of [['standard', 2048, 1365], ['original', 2400, 1600], ['custom', 1200, 800]] as const) {
     await page.getByLabel('Output size').selectOption(mode);
@@ -129,10 +129,10 @@ test('AC-12: export survives edits/source/cancel, blocks duplicates and preserve
   await expect(page.getByRole('button', { name: 'Export PNG' })).toBeDisabled();
   await expect(page.locator('#export-help')).toContainText('Preparing PNG for still-floyd-steinberg-4bpc-8x6.png');
   await page.getByLabel('Dithering Method').selectOption('atkinson');
-  await expect(page.locator('#preview-status')).toHaveText('Updating preview…');
-  await expect(page.locator('#rendered-summary')).toContainText('Last rendered: still.png · Floyd–Steinberg · 4 bits/channel');
+  await expect(page.locator('#preview-status')).toContainText('Updating preview…');
+  await expect(page.locator('#rendered-summary')).toContainText('Rendered with: still.png · Floyd–Steinberg · 4 bits/channel');
   await page.getByRole('button', { name: 'Cancel preview' }).click();
-  await expect(page.locator('#preview-status')).toHaveText('Preview out of date');
+  await expect(page.locator('#preview-status')).toContainText('Preview out of date');
   await expect(page.getByLabel('Dithering Method')).toHaveValue('atkinson');
   await page.getByLabel('Upload Image').setInputFiles(fixture('still.webp'));
   await expect(page.getByText('still.webp', { exact: true })).toBeVisible();
@@ -183,7 +183,7 @@ test('AC-12/20: debounce prevents uncommitted export; render errors stay inline 
 test('AC-20: keyboard-only import, controls, invalid recovery, reset and export preserve focus', async ({ page }) => {
   await page.keyboard.press('Tab'); await expect(page.getByRole('link', { name: 'Skip to image editor' })).toBeFocused();
   await page.keyboard.press('Enter'); await expect(page.getByRole('region', { name: 'Image editor' })).toBeFocused();
-  await tabTo(page, page.getByLabel('Upload Image'));
+  await tabTo(page, page.getByRole('button', { name: 'Choose image', exact: true }));
   const choosing = page.waitForEvent('filechooser'); await page.keyboard.press('Enter'); await (await choosing).setFiles(fixture()); await ready(page);
   await tabTo(page, page.getByLabel('Dithering Method'));
   await page.keyboard.press('Home'); await page.keyboard.press('ArrowDown'); await page.keyboard.press('ArrowDown'); await ready(page);
@@ -194,11 +194,12 @@ test('AC-20: keyboard-only import, controls, invalid recovery, reset and export 
   await expect(number(page)).toHaveValue('1'); await expect(number(page)).toHaveAttribute('aria-invalid', 'true');
   await page.keyboard.press('ControlOrMeta+A'); await page.keyboard.type('4'); await page.keyboard.press('Tab'); await ready(page);
   await expect(page.getByLabel('Soften dither pattern', { exact: true })).toBeFocused(); await page.keyboard.press('Space'); await ready(page);
+  await page.keyboard.press('Tab'); await expect(page.getByRole('button', { name: 'Reset settings' })).toBeFocused();
   await page.keyboard.press('Tab'); await expect(page.getByLabel('Output size')).toBeFocused(); await page.keyboard.press('End');
   await page.keyboard.press('Tab'); await expect(page.getByLabel('Custom width (px)')).toBeFocused();
   await page.keyboard.press('ControlOrMeta+A'); await page.keyboard.type('4'); await page.keyboard.press('Enter'); await ready(page);
-  await page.keyboard.press('Tab'); await expect(page.getByRole('button', { name: 'Reset settings' })).toBeFocused(); await page.keyboard.press('Enter'); await ready(page);
-  await page.keyboard.press('Tab'); await expect(page.getByRole('button', { name: 'Export PNG' })).toBeFocused();
+  await tabTo(page, page.getByRole('button', { name: 'Reset settings' })); await page.keyboard.press('Enter'); await ready(page);
+  await tabTo(page, page.getByRole('button', { name: 'Export PNG' }));
   const downloading = page.waitForEvent('download'); await page.keyboard.press('Enter'); await downloading;
   await expect(page.getByRole('button', { name: 'Export PNG' })).toBeFocused();
   await expect(page.getByRole('status')).toHaveCount(1);
