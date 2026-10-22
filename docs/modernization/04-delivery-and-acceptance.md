@@ -43,7 +43,7 @@ This is the single requirement register. Every P0/P1 row links implementation an
 | <a id="req-a11y-02"></a>A11Y-02 | Accessible exploration and responsive visuals | P1 | M3, M4 | [AC-14](#ac-14), [AC-20](#ac-20), [AC-22](#ac-22) | [M3 responsive/theme verification](07-m3-implementation.md); [M4 exploration verification](08-m4-implementation.md) |
 | <a id="req-arch-01"></a>ARCH-01 | Client-only static architecture, worker/cache ownership | P0 | M1 | [AC-16](#ac-16), [AC-21](#ac-21), [AC-23](#ac-23) | [M1 implementation](05-m1-implementation.md), [static browser smoke suite](../../tests/browser/m1.browser.ts) |
 | <a id="req-arch-02"></a>ARCH-02 | Maintenance, user docs and production assets | P1 | M5 | [AC-16](#ac-16), [AC-18](#ac-18), [AC-19](#ac-19) | [Shipped-app README](../../README.md), [release notes](09-release-notes.md), [static metadata/assets test](../../tests/browser/m3.browser.ts), [M5 validation](10-m5-validation.md) |
-| <a id="req-qa-01"></a>QA-01 | CI regression gates and correct push branch | P0 | Independent trigger fix; CI in M0–M5 | [AC-16](#ac-16), [AC-18](#ac-18), [AC-20](#ac-20) | [Deployment gates/master filter](../../.github/workflows/deploy.yml), [PR checks without deployment](../../.github/workflows/pull-request.yml), [production browser suites](../../tests/browser), [local validation](10-m5-validation.md). **Open:** first hosted Actions/Pages run; no push or dispatch authorized |
+| <a id="req-qa-01"></a>QA-01 | CI regression gates and correct push branch | P0 | Independent trigger fix; CI in M0–M5 | [AC-16](#ac-16), [AC-18](#ac-18), [AC-20](#ac-20) | [Deployment gates/master filter](../../.github/workflows/deploy.yml), [PR checks without deployment](../../.github/workflows/pull-request.yml), [production browser suites](../../tests/browser), [local validation](10-m5-validation.md). **Open:** awaiting the authorized pre-release push-triggered Actions/Pages run |
 
 ## Functional acceptance scenarios
 
@@ -89,7 +89,7 @@ The [pure RGBA core](../../src/utils/dithering.ts) accepts `{ width, height, dat
 - Transparent/off-image diffusion destinations lose their weights without renormalization. Hidden RGB is preserved when soften is off; fully transparent pixels neither receive nor emit diffusion error. Partially transparent pixels process straight RGB and retain alpha before soften.
 - Gaussian accumulation uses Float64 premultiplied color/alpha. Unpremultiplication uses unrounded accumulated alpha, then emitted channels/alpha use `Math.round`; if emitted alpha rounds to zero, RGB is zeroed too. Two/three-row diffusion buffers and a seven-row horizontal Gaussian cache bound intermediate storage by width.
 - Invalid bit depths are rejected even in Original/8-bit bypass paths. Seeds must be unsigned 32-bit integers; dimensions must be positive safe integers with an exact matching Uint8ClampedArray byte count. Image import size limits are intentionally outside the core.
-- Vitest 4 keeps the test runner compatible with the workflow's Node 20 runtime. `npm test` runs once in Node; no DOM shim or browser dependency is required.
+- Vitest 4 runs on the workflow's Node 22 runtime. `npm test` runs once in Node; no DOM shim or browser dependency is required.
 
 ## Required release checks
 

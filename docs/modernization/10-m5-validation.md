@@ -27,7 +27,7 @@ M5 implements QA-01 and ARCH-02. The [requirements register](04-delivery-and-acc
 
 ## Local verification
 
-The environment is Windows x64, Node 24.21.0, with a local Chromium executable selected through `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`. The browser suite serves the production export, not the dev server. A separately launched static helper is reused with `PLAYWRIGHT_REUSE_STATIC_SERVER=1` to avoid restricted Windows child-process teardown; CI uses Playwright's managed server. Setting `CI=true` locally exercises the HTML reporter configuration too.
+The original M5 environment was Windows x64, Node 24.21.0, with a local Chromium executable selected through `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`. The browser suite serves the production export, not the dev server. A separately launched static helper was reused with `PLAYWRIGHT_REUSE_STATIC_SERVER=1` to avoid restricted Windows child-process teardown; CI uses Playwright's managed server. Setting `CI=true` locally exercises the HTML reporter configuration too.
 
 | Check | Result |
 | --- | --- |
@@ -42,6 +42,10 @@ The environment is Windows x64, Node 24.21.0, with a local Chromium executable s
 | `npm run bench` | Pass; manual Node measurements below, not a CI or device-performance gate |
 
 The first browser pass demonstrated that a failure writes the HTML report, screenshot and trace. It also identified the inspector landmark advisory described above. A subsequent rerun caught an ambiguous selector in the new landscape test after the detail region appeared; the test now selects the checkbox by role and accessible name. No axe rule exclusions were added.
+
+### Node 22 pre-release verification
+
+The pre-release rerun used Windows x64, **Node 22.14.0 / npm 11.2.0**, `@axe-core/playwright` **4.14.0**, and the locked Playwright Chromium **156.0.8078.4 (build 1248)**. `npm install` refreshed the lockfile, then a clean `npm ci`, lint, `tsc --noEmit`, 129 Node tests, production build and all 46 browser tests passed. Browser tests took **1.5 minutes** with `CI=true` and the normal Playwright-managed static server; neither an executable override nor server reuse was needed. Both workflows select Node 22, `.nvmrc` contains 22, and package engines declare `>=22.12`. YAML/manifest assertions verified those versions and the unchanged gate order.
 
 The complete suite regenerates the 40 responsive state/theme screenshots in `test-results/m3-screenshots/` (with `index.html`) and four exploration screenshots in `test-results/m4-screenshots/`. M5's per-test directories also contain `first-frame.png`, `ready-844x390.png` and `ready-320x390.png`. These generated artifacts are ignored by Git and included in CI failure uploads. The M5 browser tests hold the real worker's first reply to prove no zero-percent zoom is presented, then release it and verify controls appear. Landscape mobile and 320 CSS px reflow retain exploration/export access; existing tests cover 200% text and spacing overrides.
 
@@ -78,7 +82,7 @@ Ratios calculated from the actual [CSS tokens](../../src/app/globals.css), using
 
 1. First-frame controls are absent until there is a committed image; a truthful empty-preview message also works after cancellation/failure. There is still only one polite status region. Previously committed frames remain inspectable while an update runs.
 2. Browser checks must run **after** the production build, so both workflows build before installing/running Playwright. Pages upload and deploy remain after all checks. PRs never publish.
-3. The existing Node 20 CI runtime is retained; the lockfile's Vite toolchain requires at least Node 20.19 on that major. Local checks use Node 24. Benchmark results are Node medians, not the spec's recommended browser/device p95 study.
+3. Pre-release tooling targets Node 22 in both workflows and `.nvmrc`, with a package engine minimum of 22.12 and `@axe-core/playwright` updated to the current 4.x line. The original M5 local checks used Node 24. Benchmark results are Node medians, not the spec's recommended browser/device p95 study.
 4. The 320 CSS px viewport is the layout equivalent of a 1280 px viewport at 400% browser zoom. Automated viewport/text checks do not claim browser chrome zoom or native assistive-technology validation.
-5. **Open — first hosted Actions/Pages verification:** no push or deployment dispatch is authorized. Verify the first `master` push-triggered run, its failure-artifact behavior if a check fails, the Pages environment and hosted refresh/assets after deployment; attach the run URL to QA-01 when available. Local YAML/event/order inspection and static-path browser tests cover the local release gate, without claiming this operational evidence.
+5. **Open — first hosted Actions/Pages verification:** awaiting the authorized pre-release push-triggered run and live smoke check. Verify that run, its failure-artifact behavior if a check fails, the Pages environment and hosted refresh/assets after deployment; attach the run URL to QA-01 when available. Local YAML/event/order inspection and static-path browser tests cover the local release gate, without claiming this operational evidence.
 6. **Not performed — recommended studies:** NVDA/VoiceOver, formative usability, multi-device p95/heap profiling, full browser/touch matrix and reviewed before/after photo/art gallery. Automated Chromium/axe and synthetic Node timing do not establish WCAG conformance, broad compatibility or mobile performance.

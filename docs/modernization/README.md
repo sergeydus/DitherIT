@@ -1,6 +1,6 @@
 # DitherIT modernization specifications
 
-Prepared 2026-10-22. Status: M0–M5 are implemented and local release validation is recorded in [M5 notes](10-m5-validation.md). The deployment push filter targets `master`; the first hosted Actions/Pages run remains open until a push or manual dispatch is authorized.
+Prepared 2026-10-22. Status: M0–M5 are implemented and local release validation is recorded in [M5 notes](10-m5-validation.md). The deployment push filter targets `master`; the first hosted Actions/Pages run remains open until verified after the authorized pre-release push.
 
 DitherIT should become a focused, accessible image workshop: open a local image, understand the effect, compare the result, and export exactly what the interface promises. Keep the small static application and local processing model. Prioritize trustworthy output and responsive interaction alongside the visual redesign.
 

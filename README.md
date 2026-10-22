@@ -31,7 +31,7 @@ A browser supporting module workers, `createImageBitmap`, worker `OffscreenCanva
 
 ## Run locally
 
-Use npm and Node 20.19+, 22.12+ or 24+ as supported by the locked tooling. CI uses Node 20; local release validation used Node 24.
+Use npm and Node 22.12 or newer. Both CI workflows and `.nvmrc` select Node 22; `package.json` declares the supported minimum.
 
 ```sh
 npm ci
