@@ -75,7 +75,7 @@ export default function ImageDithering() {
     setTimeout(() => {
       setIsProcessing(true);
       const ditheredData = applyDithering(imageData, ditheringMethod, bitDepth);
-      ctx.putImageData(ditheredData, 0, 0);
+      ctx.putImageData(new ImageData(ditheredData.data, ditheredData.width, ditheredData.height), 0, 0);
       setIsProcessing(false);
     }, 10);
   }, [originalImage, ditheringMethod, bitDepth]);
