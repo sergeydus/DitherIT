@@ -1,6 +1,6 @@
 # DitherIT modernization specifications
 
-Prepared 2026-10-22. Status: M0 rendering, M1 import/lifecycle, M2 settings/output, M3 workspace/themes and M4 exploration are implemented; the remaining modernization roadmap is proposed. The deployment push filter targets `master`; verify it on the first push-triggered run.
+Prepared 2026-10-22. Status: M0–M5 are implemented and local release validation is recorded in [M5 notes](10-m5-validation.md). The deployment push filter targets `master`; the first hosted Actions/Pages run remains open until a push or manual dispatch is authorized.
 
 DitherIT should become a focused, accessible image workshop: open a local image, understand the effect, compare the result, and export exactly what the interface promises. Keep the small static application and local processing model. Prioritize trustworthy output and responsive interaction alongside the visual redesign.
 
@@ -16,10 +16,12 @@ DitherIT should become a focused, accessible image workshop: open a local image,
 | [06 — M2 implementation](06-m2-implementation.md) | Settings/output, keyboard and axe verification, interpretation choices |
 | [07 — M3 implementation](07-m3-implementation.md) | Responsive workspace, themes, metadata, screenshot matrix and accessibility limits |
 | [08 — M4 implementation](08-m4-implementation.md) | Licensed sample, presets, seeded variation, comparison, zoom/pan and exact detail crops |
+| [09 — Release notes](09-release-notes.md) | User-visible changes, algorithm corrections, format restrictions and known limitations |
+| [10 — M5 validation](10-m5-validation.md) | Release evidence, CI gates, interpretation choices and outstanding operational/study work |
 
 Requirement IDs are stable across the documents. **P0** means necessary for a trustworthy foundation; **P1** completes the modernized experience; **P2** is a later candidate. Complete P0 and P1 behavior before calling the modernization release complete. The [requirements matrix](04-delivery-and-acceptance.md#requirements-and-evidence) maps every ID to a work package, acceptance tests, and an evidence slot. Required release checks and recommended research/device studies are explicitly separated in that document.
 
-## Proposed decisions
+## Implemented decisions
 
 - Use a preview-first workspace with a desktop inspector and a single-column mobile flow.
 - Keep Next.js, React, TypeScript, Tailwind, static export, and GitHub Pages. A framework migration is outside this plan.
@@ -32,8 +34,8 @@ Requirement IDs are stable across the documents. **P0** means necessary for a tr
 - Preserve GIF/AVIF/BMP import where supported, normalize animated inputs to a still frame, and avoid adding an animation-rejection parser.
 - Ship dark and light themes, keyboard access, a built-in sample, presets, and original/result comparison.
 
-These are product proposals, not claims of completed implementation. Basic limit/cancellation checks are required; multi-device p95 benchmarking, usability studies, and NVDA/VoiceOver studies are recommended follow-up evidence. The audit uses repository source and verified GitHub branch/run metadata, not browser observation or measured performance. No WCAG conformance claim follows from automated checks alone.
+These decisions are implemented; the linked notes describe their checks and limits. Multi-device p95 benchmarking, usability studies, and NVDA/VoiceOver studies remain recommended follow-up evidence. The original audit describes the pre-modernization source and branch/run metadata. No WCAG conformance claim follows from automated checks alone.
 
 ## Boundaries
 
-M0–M4 are implemented; specifications 05–08 record the checks and their limits. M5 remains subject to its acceptance criteria. Specification 02 describes the target behavior implemented through M4; final release evidence and accessibility conformance are not claimed.
+M0–M5 are implemented; specifications 05–10 record the checks and their limits. The local production artifact is validated without publishing. Hosted CI/deployment verification and recommended studies remain explicitly open; accessibility conformance is not claimed.

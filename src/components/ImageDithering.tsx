@@ -168,7 +168,7 @@ export default function ImageDithering() {
           </div>
         </section>
 
-        <aside className="inspector panel" aria-labelledby="settings-heading">
+        <section className="inspector panel" aria-labelledby="settings-heading">
           <div className="panel-heading"><h2 id="settings-heading">Look</h2><span className="eyebrow">RGB</span></div>
           <p id="settings-help" className={source ? 'sr-only' : 'helper'}>{source ? 'Adjust the look and output size below.' : 'Choose an image to enable settings and output controls.'}</p>
           <div className="inspector-section">
@@ -251,7 +251,7 @@ export default function ImageDithering() {
             <button onClick={handleDownload} disabled={!source} aria-disabled={!state.canExport} aria-describedby={`export-summary export-help${filename ? ' export-filename' : ''}${exportError ? ' export-error' : ''}`}
               className={`${button} button-primary export-button`}>Export PNG</button>
           </section>
-        </aside>
+        </section>
       </div>
       <details id="dithering-guide" className="guide panel">
         <summary>Guide to dithering <span className="helper">Methods, color and local processing</span></summary>

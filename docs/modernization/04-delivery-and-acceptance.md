@@ -19,7 +19,7 @@ Introduce focused algorithm tests with M0 and orchestration tests with M1 rather
 
 ## Requirements and evidence
 
-This is the single requirement register. Every P0/P1 row needs implementation and required-test evidence before release; **Pending** is a placeholder, not a pass. Replace it with concrete PR/artifact/run links as work lands. Acceptance scenarios below are required behavior checks; recommended studies have separate tracking and do not block these rows. P2 candidates remain in specification 01 and have no release evidence requirement.
+This is the single requirement register. Every P0/P1 row links implementation and required-test evidence. Open operational verification is explicitly identified with its reason in the evidence column and [M5 validation notes](10-m5-validation.md); it is not represented as a completed hosted run. Acceptance scenarios below are required behavior checks; recommended studies have separate tracking and do not block these rows. P2 candidates remain in specification 01 and have no release evidence requirement.
 
 | ID | Requirement | Priority | Work package | Acceptance tests | Implementation / required evidence |
 | --- | --- | --- | --- | --- | --- |
@@ -42,8 +42,8 @@ This is the single requirement register. Every P0/P1 row needs implementation an
 | <a id="req-a11y-01"></a>A11Y-01 | Core labels, keyboard and status semantics | P0 | M2 | [AC-20](#ac-20) | [M2 implementation and verification](06-m2-implementation.md) |
 | <a id="req-a11y-02"></a>A11Y-02 | Accessible exploration and responsive visuals | P1 | M3, M4 | [AC-14](#ac-14), [AC-20](#ac-20), [AC-22](#ac-22) | [M3 responsive/theme verification](07-m3-implementation.md); [M4 exploration verification](08-m4-implementation.md) |
 | <a id="req-arch-01"></a>ARCH-01 | Client-only static architecture, worker/cache ownership | P0 | M1 | [AC-16](#ac-16), [AC-21](#ac-21), [AC-23](#ac-23) | [M1 implementation](05-m1-implementation.md), [static browser smoke suite](../../tests/browser/m1.browser.ts) |
-| <a id="req-arch-02"></a>ARCH-02 | Maintenance, user docs and production assets | P1 | M5 | [AC-16](#ac-16), [AC-18](#ac-18), [AC-19](#ac-19) | Pending |
-| <a id="req-qa-01"></a>QA-01 | CI regression gates and correct push branch | P0 | Independent trigger fix; CI in M0–M5 | [AC-16](#ac-16), [AC-18](#ac-18), [AC-20](#ac-20) | Push filter [targets master](../../.github/workflows/deploy.yml); remaining gates Pending |
+| <a id="req-arch-02"></a>ARCH-02 | Maintenance, user docs and production assets | P1 | M5 | [AC-16](#ac-16), [AC-18](#ac-18), [AC-19](#ac-19) | [Shipped-app README](../../README.md), [release notes](09-release-notes.md), [static metadata/assets test](../../tests/browser/m3.browser.ts), [M5 validation](10-m5-validation.md) |
+| <a id="req-qa-01"></a>QA-01 | CI regression gates and correct push branch | P0 | Independent trigger fix; CI in M0–M5 | [AC-16](#ac-16), [AC-18](#ac-18), [AC-20](#ac-20) | [Deployment gates/master filter](../../.github/workflows/deploy.yml), [PR checks without deployment](../../.github/workflows/pull-request.yml), [production browser suites](../../tests/browser), [local validation](10-m5-validation.md). **Open:** first hosted Actions/Pages run; no push or dispatch authorized |
 
 ## Functional acceptance scenarios
 
@@ -102,7 +102,7 @@ The [pure RGBA core](../../src/utils/dithering.ts) accepts `{ width, height, dat
 | axe | Empty/ready/busy/error, both themes: no unresolved serious/critical findings; manually triage findings; score alone is not conformance |
 | Static-path and CI smoke test | Actual exported artifact at `/DitherIT/` and event-filter checks proving `master` is configured; no deployment required for this check |
 
-Use Playwright or equivalent browser automation and adopt axe-core for the required automated accessibility check during implementation; these are not current dependencies. A separate end-to-end test per styling token is unnecessary; use representative screenshots and meaningful workflows. Required evidence may use one supported desktop engine with narrow and desktop viewports; broader compatibility work is recommended below. Known core-workflow failures remain blockers regardless of which check discovers them.
+Playwright and axe-core implement the required automated accessibility checks. The [M3 suite](../../tests/browser/m3.browser.ts) records the state/width/theme screenshot matrix and checks text enlargement, spacing, forced colors and reduced motion; [M4](../../tests/browser/m4.browser.ts) covers exploration and [M5](../../tests/browser/m5.browser.ts) adds first-frame and landscape/reflow checks. A separate end-to-end test per styling token is unnecessary. Required evidence uses Chromium with narrow and desktop viewports; broader compatibility work is recommended below. Known core-workflow failures remain blockers regardless of which check discovers them.
 
 ## Recommended follow-up evidence
 
@@ -117,7 +117,7 @@ These studies do not block release merely because unavailable. Record unperforme
 
 ## Build and deployment verification
 
-CI should install from the lockfile, run ESLint, perform explicit TypeScript checking, run algorithm/lifecycle/workflow suites and accessibility checks, then build the static artifact. Available scripts include `test` (Node fixtures/lifecycle/worker-operation tests), `test:browser` (production static smoke tests) and `bench` (manual only), alongside `dev`, `build`, `start`, and `lint`. Axe and CI wiring remain separate implementation work.
+Both [deployment](../../.github/workflows/deploy.yml) and [pull-request](../../.github/workflows/pull-request.yml) CI install from the lockfile, run ESLint, explicit TypeScript checking and Node tests, build the static artifact, install Playwright Chromium with system dependencies, then run production browser workflows and axe before any Pages artifact upload. Browser checks serve the actual `out` at `/DitherIT/`. Failure reports, screenshots and traces are uploaded for 14 days. PR validation has read-only repository permissions and no deployment job. `bench` stays manual and outside CI. See the [README](../../README.md) for all local commands; use the static server helper rather than `next start` for the exported build.
 
 Serve `out` through a local static server mounted under the production base path. Check direct navigation, refresh, fonts, favicon, sample load, module worker startup, image import, error recovery, comparison, and PNG download. Verify no hardcoded root paths or dependency on runtime Next.js server features. Publishing to Pages is a separate operational action, not part of these specs.
 
@@ -127,7 +127,7 @@ Benchmark using the recommended method in specification 03 when devices are avai
 
 ## Required release checklist
 
-- [Requirements matrix](#requirements-and-evidence): every P0/P1 row links implementation and required-test evidence; no Pending row is represented as passed.
+- [Requirements matrix](#requirements-and-evidence): every P0/P1 row links implementation and required-test evidence; any open operational verification states its reason and is not represented as passed.
 - [IMG-01](#req-img-01), [IMG-02](#req-img-02), [IMG-03](#req-img-03), [IMG-04](#req-img-04), [EXP-01](#req-exp-01), [EXP-02](#req-exp-02): exact algorithm/parity and snapshot tests pass at disclosed dimensions.
 - [IN-01](#req-in-01), [PERF-01](#req-perf-01), [PERF-02](#req-perf-02): input limits, worker supersession, cancel without rollback, cleanup and error recovery pass.
 - [A11Y-01](#req-a11y-01), [A11Y-02](#req-a11y-02), [UX-01](#req-ux-01), [UX-05](#req-ux-05), [UI-01](#req-ui-01): keyboard, axe, responsive/theme checks and 1:1 inspection pass.

@@ -80,14 +80,14 @@ export function ImagePreview({ frame, stale, getSnapshot }: { frame: CommittedRe
   const pan = (x: number, y: number) => { viewport.current?.scrollBy(x * Math.max(40, area.width / 2), y * Math.max(40, area.height / 2)); };
   const description = frame ? `${frame.baseline.source.name}, ${view} view, ${settingsSummary(frame.settings)}, ${width} by ${height} pixels${stale ? ', preview out of date' : ''}` : 'Image preview is processing';
   return <>
-    <div ref={viewport} className="image-viewport" role="region" aria-label="Image viewport" tabIndex={0} aria-describedby="inspection-help preview-status"
+    <div ref={viewport} className="image-viewport" role="region" aria-label="Image viewport" tabIndex={frame ? 0 : -1} aria-describedby={frame ? 'inspection-help preview-status' : 'preview-status'}
       style={{ overscrollBehavior: maxX > 1 || maxY > 1 ? 'contain' : 'auto' }}
       onScroll={event => {
         const element = event.currentTarget;
         center.current = { x: clamp((element.scrollLeft + area.width / 2 - left) / displayWidth, 0, 1), y: clamp((element.scrollTop + area.height / 2 - top) / displayHeight, 0, 1) };
         setScroll({ left: element.scrollLeft, top: element.scrollTop });
       }}>
-      <div className="image-stage" style={{ width: stageWidth, height: stageHeight }}>
+      {frame ? <div className="image-stage" style={{ width: stageWidth, height: stageHeight }}>
         <div className="display-image" style={{ left, top, width: displayWidth, height: displayHeight }}>
           <canvas ref={canvas} role="img" aria-label={description} aria-describedby={`${frame && stale ? 'rendered-summary ' : ''}preview-status`}
             style={{ imageRendering: scale >= 1 ? 'pixelated' : 'auto' }} onClick={event => {
@@ -99,9 +99,9 @@ export function ImagePreview({ frame, stale, getSnapshot }: { frame: CommittedRe
           {detailOn && zoom === 'fit' && frame && <div aria-hidden="true" className="detail-outline" data-testid="detail-outline"
             style={{ left: crop.x * scale, top: crop.y * scale, width: crop.width * scale, height: crop.height * scale }} />}
         </div>
-      </div>
+      </div> : <p className="helper">No preview rendered yet.</p>}
     </div>
-    <div className="preview-controls">
+    {frame && <div className="preview-controls">
       <fieldset className="view-group" disabled={!frame}><legend>Comparison view</legend>
         <div className="view-options">{(['original', 'result', 'split'] as const).map(option => <label key={option}>
           <input type="radio" name="preview-view" value={option} checked={view === option} onChange={() => setView(option)} />
@@ -148,6 +148,6 @@ export function ImagePreview({ frame, stale, getSnapshot }: { frame: CommittedRe
           <button className="button button-quiet" disabled={point.y >= height - 1} onClick={() => setPosition(point.x, point.y + 16)}>Move detail down</button>
         </div>
       </section>}
-    </div>
+    </div>}
   </>;
 }

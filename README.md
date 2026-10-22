@@ -1,96 +1,72 @@
-# Image Dithering Studio
+# DitherIT — Image Dithering Studio
 
-A Next.js application that allows users to apply various dithering algorithms to images with adjustable bit depth control.
+Explore dithering styles, compare results, and export reduced-color images directly in your browser.
 
-🚀 **Live Demo**: [https://sergeydus.github.io/DitherIT/](https://sergeydus.github.io/DitherIT/)
+🚀 **Live Demo**: [DitherIT on GitHub Pages](https://sergeydus.github.io/DitherIT/)
 
 ## Modernization specifications
 
-See the [modernization specification set](docs/modernization/README.md) for the UI/UX roadmap, accessibility requirements, processing architecture, and implementation plan. M0–M4 are implemented, including the responsive workspace, sample, presets and comparison/detail tools; M5 final release validation remains planned. [M1](docs/modernization/05-m1-implementation.md), [M2](docs/modernization/06-m2-implementation.md), [M3](docs/modernization/07-m3-implementation.md) and [M4 implementation notes](docs/modernization/08-m4-implementation.md) describe behavior, tests and remaining coverage.
+The [specifications and requirements matrix](docs/modernization/04-delivery-and-acceptance.md) link M0–M5 implementation and test evidence. See the [release notes](docs/modernization/09-release-notes.md) for behavior changes and limitations, and [M5 validation](docs/modernization/10-m5-validation.md) for local checks and outstanding follow-up studies.
 
 ## Features
 
-- **Load Images**: Upload images from your device
-- **Multiple Dithering Methods**:
-  - Floyd-Steinberg (error diffusion)
-  - Atkinson (Apple's dithering algorithm)
-  - Ordered/Bayer (threshold map pattern)
-  - Random dithering
-  - Simple threshold
-- **Bit Depth Control**: Adjust color bit depth from 1-8 bits
-- **Live Preview**: See effects in real-time on an HTML canvas
-- **Download**: Save processed images as PNG files
+- Original, Floyd–Steinberg, Atkinson, Ordered/Bayer, Random and Threshold methods; 1–8 bits per RGB channel and post-dither Gaussian softening.
+- Balanced, Classic texture, Ordered texture and Soft grain presets. Random uses a stable seed; New variation explicitly changes it.
+- Original / Result / Split comparison, Fit and 25–400% zoom, keyboard pan controls and a 160 × 160 px 1:1 detail pane.
+- Responsive workspace, System/Light/Dark themes, labelled native controls, keyboard workflows and a locally bundled [CC0 sample](public/samples/README.md).
+- Interruptible worker rendering with a reusable resized baseline. Cancel retains settings and the last preview; Render preview applies the current settings.
+- PNG export from the committed RGBA bytes, including partial transparency and softening. An export already started finishes its snapshot even if you keep editing. Comparison overlays and zoom never enter the PNG.
 
-## Getting Started
+## Import, output and privacy
 
-First, run the development server:
+Choose or drop **one PNG, JPEG, WebP, GIF, AVIF or BMP**. Limits are **20 MiB per file, 16 million decoded pixels and 8,192 px per side**. Actual codec support depends on the browser. Animated inputs become a single still image (first/default frame); SVG, HEIC and other formats are unsupported.
 
-```bash
+The default is **Standard — up to 2048 px on the longest edge**, preserving aspect ratio and never upscaling. A 2400 × 1600 source becomes 2048 × 1365; portrait 1600 × 2400 becomes 1365 × 2048. Choose **Original dimensions** explicitly for full resolution, or **Custom width** from 1 to the source width, with height calculated automatically. Source and output dimensions are shown separately. Comparison Original means the decoded, resized baseline at the selected output dimensions.
+
+Bits per channel describes RGB quantization, not PNG file bit depth. Four bits gives 16 levels/channel and up to 4,096 RGB colors before softening; soften may add colors. PNG output is always 8-bit RGBA. Filenames include source name, method, depth (except Original) and output dimensions, for example `photo-floyd-steinberg-4bpc-2048x1365.png`.
+
+Image decoding, resizing, dithering and PNG encoding run locally in browser workers. Image bytes are not uploaded; there is no image service or analytics. Only the theme preference is persisted, with safe fallback if storage is blocked. The app, fonts and optional sample are static assets fetched from the host; this is not an offline-installable app.
+
+A browser supporting module workers, `createImageBitmap`, worker `OffscreenCanvas` and `CompressionStream('deflate')` is required. Missing APIs and unsupported decoders produce recoverable errors. Full-resolution processing can use substantial memory; no mobile latency or memory guarantee is claimed. Output uses browser-normalized 8-bit sRGB; source metadata, color profiles, HDR and animation are not preserved. Browser preview canvases can round semi-transparent colors for display; the downloaded PNG preserves the committed bytes exactly.
+
+## Run locally
+
+Use npm and Node 20.19+, 22.12+ or 24+ as supported by the locked tooling. CI uses Node 20; local release validation used Node 24.
+
+```sh
+npm ci
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [localhost:3000](http://localhost:3000). For the production static build:
 
-## How to Use
-
-1. **Upload an Image**: Click the "Upload Image" button and select an image file
-2. **Choose Dithering Method**: Select from the dropdown menu:
-   - None (original image)
-   - Floyd-Steinberg
-   - Atkinson
-   - Ordered (Bayer)
-   - Random
-   - Threshold
-3. **Adjust Bit Depth**: Use the slider to reduce color bit depth (1-8 bits)
-4. **Preview**: See the effect applied instantly on the canvas
-5. **Download**: Click "Download Image" to save the processed image
-
-## Tech Stack
-
-- **Framework**: Next.js 16 (App Router)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **Canvas API**: HTML5 Canvas for image processing
-
-## Project Structure
-
-```
-src/
-├── app/
-│   ├── globals.css          # Global styles
-│   ├── layout.tsx           # Root layout
-│   └── page.tsx             # Home page
-├── components/
-│   └── ImageDithering.tsx   # Main dithering component
-└── utils/
-    └── dithering.ts         # Dithering algorithms
+```sh
+npm run build
+node scripts/serve-static.mjs
 ```
 
-## Dithering Algorithms Explained
+Open [localhost:4173/DitherIT/](http://127.0.0.1:4173/DitherIT/). The helper serves `out` at the production base path. `npm start` invokes Next's server and is not the serving path for this static export.
 
-- **Floyd-Steinberg**: Distributes quantization error to neighboring pixels in a specific pattern
-- **Atkinson**: Similar to Floyd-Steinberg but more conservative, creates lighter images
-- **Ordered (Bayer)**: Uses a threshold map to create regular patterns, faster processing
-- **Random**: Adds random noise before quantization for a grainy effect
-- **Threshold**: Simple quantization without error diffusion
+## Checks and benchmarks
 
-## Learn More
+```sh
+npm run lint
+npx tsc --noEmit
+npm test
+npm run build
+npx playwright install chromium
+npm run test:browser
+npm run bench
+```
 
-To learn more about Next.js, take a look at the following resources:
+Browser tests launch their own static server and exercise the built `out` under `/DitherIT/`, including keyboard operation, exact PNG pixels, axe, responsive screenshots, themes and worker lifecycle. On Linux, `npx playwright install --with-deps chromium` also installs browser system dependencies. Alternatively set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` to an installed Chromium-based browser such as Edge. To reuse a separately started helper server, set `PLAYWRIGHT_REUSE_STATIC_SERVER=1`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Screenshots and failure traces go to `test-results/`. CI also creates an HTML report in `playwright-report/` and uploads both directories on failure. The screenshot gallery is `test-results/m3-screenshots/index.html`; M4 exploration captures are in `test-results/m4-screenshots/`. These generated files are ignored by Git.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+`npm run bench` is manual only: each method at 1 megapixel with soften off/on, median of five Node runs. It is not a CI gate or a browser/device p95 study. Real-device profiling, NVDA/VoiceOver and formative usability studies have not been performed; automated checks do not establish WCAG conformance.
 
-## Deploy on Vercel
+## Deployment
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+GitHub Pages serves the exported `out` directory at `/DitherIT/`. In repository Settings → Pages, select GitHub Actions as the build source. The [deployment workflow](.github/workflows/deploy.yml) runs on pushes to `master` or manual dispatch. It installs from the lockfile, then gates Pages artifact upload on lint, explicit typechecking, Node tests, production build and Playwright Chromium tests. Deployment needs the successful build job. The [pull-request workflow](.github/workflows/pull-request.yml) runs the same checks without deploying or requesting Pages write permissions.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+A push to `master` or manual deployment dispatch can publish all included commits. The first push-triggered run and hosted deployment still need verification; local static validation does not stand in for that remote run.
