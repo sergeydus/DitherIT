@@ -1,6 +1,6 @@
 # DitherIT modernization specifications
 
-Prepared 2026-10-22. Status: M0 rendering and M1 import/lifecycle are implemented; the remaining modernization roadmap is proposed. The deployment push filter targets `master`; verify it on the first push-triggered run.
+Prepared 2026-10-22. Status: M0 rendering, M1 import/lifecycle and M2 settings/output are implemented; the remaining modernization roadmap is proposed. The deployment push filter targets `master`; verify it on the first push-triggered run.
 
 DitherIT should become a focused, accessible image workshop: open a local image, understand the effect, compare the result, and export exactly what the interface promises. Keep the small static application and local processing model. Prioritize trustworthy output and responsive interaction alongside the visual redesign.
 
@@ -13,6 +13,7 @@ DitherIT should become a focused, accessible image workshop: open a local image,
 | [03 — Processing and technical architecture](03-processing-and-architecture.md) | Rendering contracts, input limits, concurrency, export, and deployment |
 | [04 — Delivery and acceptance](04-delivery-and-acceptance.md) | Dependency-ordered work packages, verification scenarios, and release gates |
 | [05 — M1 implementation](05-m1-implementation.md) | Built import/worker lifecycle, interpretation choices, tests, and remaining coverage |
+| [06 — M2 implementation](06-m2-implementation.md) | Settings/output, keyboard and axe verification, interpretation choices |
 
 Requirement IDs are stable across the documents. **P0** means necessary for a trustworthy foundation; **P1** completes the modernized experience; **P2** is a later candidate. Complete P0 and P1 behavior before calling the modernization release complete. The [requirements matrix](04-delivery-and-acceptance.md#requirements-and-evidence) maps every ID to a work package, acceptance tests, and an evidence slot. Required release checks and recommended research/device studies are explicitly separated in that document.
 
@@ -33,4 +34,4 @@ These are product proposals, not claims of completed implementation. Basic limit
 
 ## Boundaries
 
-M0 and M1 are implemented; specification 05 records the checks and their limits. M2–M5 remain subject to their acceptance criteria. The visual workspace designs in specification 02 are proposals, and accessibility conformance is not claimed.
+M0–M2 are implemented; specifications 05–06 record the checks and their limits. M3–M5 remain subject to their acceptance criteria. The visual workspace designs in specification 02 are proposals, and accessibility conformance is not claimed.

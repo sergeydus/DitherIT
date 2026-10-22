@@ -4,7 +4,7 @@ import path from 'node:path';
 import { decodePng } from '../helpers/decode-png';
 
 const fixture = (name: string) => path.resolve('tests/fixtures/import', name);
-const ready = async (page: Page) => expect(page.getByRole('button', { name: 'Download Image', exact: true })).toBeEnabled();
+const ready = async (page: Page) => expect(page.getByRole('button', { name: 'Export PNG', exact: true })).toBeEnabled();
 type Trace = { sent: Record<string, number>; replies: Record<string, number>; terminated: string[]; pixelOps: number; urls: string[];
   renderWorkers: number; committedSnapshot?: { width: number; height: number; pixels: number[] } };
 type TraceWindow = Window & { __trace: Trace; __readPreview: () => number[] };
@@ -64,7 +64,7 @@ test('production chunks, cached baseline, worker softening and PNG snapshot work
   expect(before.renderWorkers).toBe(1); expect(before.terminated).not.toContain('render');
   // Turbopack bootstraps worker chunks with same-origin blob URLs.
   expect(before.urls.every(url => url.startsWith('blob:http://127.0.0.1:4173/') || new URL(url).pathname.startsWith('/DitherIT/_next/'))).toBe(true);
-  const downloading = page.waitForEvent('download'); await page.getByRole('button', { name: 'Download Image', exact: true }).click();
+  const downloading = page.waitForEvent('download'); await page.getByRole('button', { name: 'Export PNG', exact: true }).click();
   const download = await downloading;
   expect(download.suggestedFilename()).toBe('still-atkinson-3bpc-8x6.png');
   const png = await readFile((await download.path())!);
@@ -122,22 +122,22 @@ test('invalid replacements retain good result; multi-file drops have recovery gu
 test('cancel keeps settings and baseline, retry works, Standard output is disclosed on a narrow screen', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByLabel('Upload Image').setInputFiles(fixture('large.png')); await ready(page);
-  await expect(page.getByRole('status')).toContainText('Source 2400 × 1600 px → Output 2048 × 1365 px');
+  await expect(page.locator('#export-summary')).toContainText('Source 2400 × 1600 px → PNG 2048 × 1365 px');
   await page.getByLabel('Soften dither pattern').check();
   await page.getByRole('button', { name: 'Cancel preview' }).click();
-  await expect(page.getByRole('status')).toHaveText('Preview out of date');
+  await expect(page.locator('#preview-status')).toHaveText('Preview out of date');
   await expect(page.getByLabel('Soften dither pattern')).toBeChecked();
-  await expect(page.getByRole('button', { name: 'Download Image', exact: true })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Export PNG', exact: true })).toBeDisabled();
   await page.getByRole('button', { name: 'Render preview' }).click(); await ready(page);
   expect(await page.evaluate(() => (window as unknown as TraceWindow).__trace.sent.prepare)).toBe(1);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.getByLabel('Output size').selectOption('original'); await ready(page);
-  await expect(page.getByRole('status')).toContainText('Output 2400 × 1600 px');
+  await expect(page.locator('#output-dimensions')).toContainText('2400 × 1600 px');
 });
 
 test('a 16 MP source reuses preparation across depth, method and soften changes', async ({ page }) => {
   await page.getByLabel('Upload Image').setInputFiles(fixture('limit-16mp.jpg')); await ready(page);
-  await expect(page.getByRole('status')).toContainText('Source 4000 × 4000 px → Output 2048 × 2048 px');
+  await expect(page.locator('#export-summary')).toContainText('Source 4000 × 4000 px → PNG 2048 × 2048 px');
   await page.getByLabel('Dithering Method').selectOption('atkinson'); await ready(page);
   await page.locator('#bit-depth').focus(); await page.locator('#bit-depth').press('Home'); await ready(page);
   await page.getByLabel('Soften dither pattern').check(); await ready(page);

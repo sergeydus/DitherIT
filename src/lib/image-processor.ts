@@ -7,13 +7,14 @@ export interface ProcessorState {
   status: 'empty' | 'opening' | 'processing' | 'ready' | 'outdated' | 'error';
   source: SourceInfo | null; settings: RenderSettings; output: OutputSize; frame: CommittedRender | null;
   error: string | null; exporting: boolean; exportFilename: string | null; canExport: boolean;
+  errorAction: 'import' | 'render' | 'export' | null;
 }
 type Candidate = { id: number; file: File; validated: boolean };
 
 /** Owns browser resources and async authority; React only subscribes/presents bitmaps. */
 export class ImageProcessor {
   private state: ProcessorState = { status: 'empty', source: null, settings: { ...DEFAULT_SETTINGS },
-    output: STANDARD_OUTPUT, frame: null, error: null, exporting: false, exportFilename: null, canExport: false };
+    output: STANDARD_OUTPUT, frame: null, error: null, errorAction: null, exporting: false, exportFilename: null, canExport: false };
   private listeners = new Set<() => void>();
   private file: File | null = null;
   private baseline: Baseline | null = null;
@@ -50,6 +51,7 @@ export class ImageProcessor {
     return !!frame && frame.baseline.key === this.expectedBaselineKey() && frame.settingsKey === settingsKey(this.state.settings);
   }
   private publish(patch: Partial<ProcessorState> = {}): void {
+    if (patch.error === null) patch.errorAction = null;
     this.state = { ...this.state, ...patch };
     this.state.canExport = this.state.status === 'ready' && this.matchesFrame() && !this.state.exporting &&
       !this.candidate && !this.preparation && !this.renderBusy && !this.timer;
@@ -76,12 +78,12 @@ export class ImageProcessor {
   private preparationFailed(candidate: Candidate | null, code: keyof typeof FAILURE_MESSAGES): void {
     if (candidate && this.candidate === candidate) this.candidate = null;
     this.stopPreparation();
-    this.publish({ error: FAILURE_MESSAGES[code], status: this.renderBusy || this.timer ? 'processing' : this.matchesFrame() ? 'ready' : this.state.source ? 'outdated' : 'empty' });
+    this.publish({ error: FAILURE_MESSAGES[code], errorAction: candidate ? 'import' : 'render', status: this.renderBusy || this.timer ? 'processing' : this.matchesFrame() ? 'ready' : this.state.source ? 'outdated' : 'empty' });
   }
 
   async importFiles(files: readonly File[]): Promise<void> {
     if (this.disposed || files.length === 0) return;
-    if (files.length !== 1) { this.publish({ error: FAILURE_MESSAGES['too-many-files'] }); return; }
+    if (files.length !== 1) { this.publish({ error: FAILURE_MESSAGES['too-many-files'], errorAction: 'import' }); return; }
     this.stopPreparation();
     const candidate: Candidate = { id: ++this.sourceId, file: files[0], validated: false };
     this.candidate = candidate;
@@ -163,6 +165,13 @@ export class ImageProcessor {
     } else if (this.file && this.state.source) this.prepare(this.file, this.state.source.id, null);
   }
 
+  resetSettings(): void {
+    if (this.disposed) return;
+    // One render/preparation transaction through the existing output lifecycle.
+    this.state = { ...this.state, settings: { ...DEFAULT_SETTINGS } };
+    this.setOutput({ ...STANDARD_OUTPUT });
+  }
+
   private scheduleRender(delay: number): void {
     if (this.disposed || this.candidate || !this.state.source) return;
     if (!this.baseline || this.baseline.key !== this.expectedBaselineKey()) {
@@ -183,14 +192,14 @@ export class ImageProcessor {
     const jobId = ++this.jobId;
     let worker: WorkerPort;
     try { worker = this.render ?? this.workers('render'); }
-    catch { this.publish({ status: 'error', error: FAILURE_MESSAGES['unsupported-browser'] }); return; }
+    catch { this.publish({ status: 'error', error: FAILURE_MESSAGES['unsupported-browser'], errorAction: 'render' }); return; }
     this.render = worker;
     this.renderBusy = true;
     this.publish({ status: 'processing' });
     const current = () => !this.disposed && this.renderBusy && this.render === worker && this.jobId === jobId;
     const failed = (code: keyof typeof FAILURE_MESSAGES) => {
       if (!current()) return;
-      this.stopRender(); this.publish({ status: 'error', error: FAILURE_MESSAGES[code] });
+      this.stopRender(); this.publish({ status: 'error', error: FAILURE_MESSAGES[code], errorAction: 'render' });
     };
     worker.onmessage = ({ data }: MessageEvent<WorkerReply>) => {
       if (!current()) { if (data.kind === 'complete') data.resultView.close(); return; }
@@ -206,7 +215,7 @@ export class ImageProcessor {
       if (this.disposed || this.render !== worker) return;
       if (this.renderBusy) {
         this.stopRender(true);
-        this.publish({ status: 'error', error: FAILURE_MESSAGES['processing-failed'] });
+        this.publish({ status: 'error', error: FAILURE_MESSAGES['processing-failed'], errorAction: 'render' });
       } else {
         // Retire a broken idle worker without canceling an already scheduled debounce.
         worker.terminate(); this.render = null;
@@ -220,7 +229,7 @@ export class ImageProcessor {
   private acceptRender(reply: RenderReply, baseline: Baseline, settings: RenderSettings): void {
     if (reply.width !== baseline.width || reply.height !== baseline.height || reply.pixels.byteLength !== baseline.width * baseline.height * 4 ||
         reply.resultView.width !== baseline.width || reply.resultView.height !== baseline.height) {
-      reply.resultView.close(); this.stopRender(); this.publish({ status: 'error', error: FAILURE_MESSAGES['processing-failed'] }); return;
+      reply.resultView.close(); this.stopRender(); this.publish({ status: 'error', error: FAILURE_MESSAGES['processing-failed'], errorAction: 'render' }); return;
     }
     const previous = this.state.frame;
     this.renderBusy = false; // Retain the idle worker; invalidate this completed job's reply authority.
@@ -246,7 +255,7 @@ export class ImageProcessor {
   }
 
   reportFailure(code: keyof typeof FAILURE_MESSAGES): void {
-    if (!this.disposed) this.publish({ error: FAILURE_MESSAGES[code] });
+    if (!this.disposed) this.publish({ error: FAILURE_MESSAGES[code], errorAction: 'export' });
   }
 
   exportPng(): Promise<{ blob: Blob; filename: string }> {
@@ -256,9 +265,9 @@ export class ImageProcessor {
     const exportId = ++this.exportId;
     let worker: WorkerPort;
     try { worker = this.workers('export'); }
-    catch { this.publish({ error: FAILURE_MESSAGES['unsupported-browser'] }); return Promise.reject(new ProcessingError('unsupported-browser')); }
+    catch { this.publish({ error: FAILURE_MESSAGES['unsupported-browser'], errorAction: 'export' }); return Promise.reject(new ProcessingError('unsupported-browser')); }
     this.encoder = worker;
-    this.publish({ exporting: true, exportFilename: filename });
+    this.publish({ exporting: true, exportFilename: filename, ...(this.state.errorAction === 'export' ? { error: null } : {}) });
     return new Promise((resolve, reject) => {
       this.rejectExport = reject;
       const current = () => !this.disposed && this.encoder === worker && this.exportId === exportId;
@@ -268,7 +277,7 @@ export class ImageProcessor {
       };
       const failed = (code: keyof typeof FAILURE_MESSAGES) => {
         if (!current()) return;
-        finish(); this.publish({ error: FAILURE_MESSAGES[code] }); reject(new ProcessingError(code));
+        finish(); this.publish({ error: FAILURE_MESSAGES[code], errorAction: 'export' }); reject(new ProcessingError(code));
       };
       worker.onmessage = ({ data }: MessageEvent<WorkerReply>) => {
         if (!current()) return;

@@ -203,6 +203,7 @@ describe('AC-08/09/12/17/23: image lifecycle and ownership', () => {
     await open(); const first = processor.exportPng(); h.last('export').crash(); await expect(first).rejects.toMatchObject({ code: 'export-failed' });
     expect(processor.getSnapshot().canExport).toBe(true);
     const second = processor.exportPng(); const encoder = h.last('export');
+    expect(processor.getSnapshot()).toMatchObject({ error: null, errorAction: null });
     encoder.emit({ kind: 'exported', exportId: encoder.request<ExportRequest>().exportId, blob: new Blob([]) });
     await expect(second).rejects.toMatchObject({ code: 'export-failed' }); expect(processor.getSnapshot().exporting).toBe(false);
   });
@@ -212,6 +213,29 @@ describe('AC-08/09/12/17/23: image lifecycle and ownership', () => {
     processor.setSettings({ bitsPerChannel: 1, soften: true }, true); vi.runAllTimers();
     expect(h.count('render')).toBe(count); expect(processor.getSnapshot().canExport).toBe(true);
     expect(processor.getSnapshot().settings).toMatchObject({ bitsPerChannel: 1, soften: true });
+  });
+
+  it('resets settings/output in one preparation transaction while retaining the source', async () => {
+    await open('source.png', 2400, 1600);
+    processor.setSettings({ method: 'random', bitsPerChannel: 1, soften: true, seed: 42 }); h.rendered();
+    processor.setOutput({ mode: 'custom', width: 1200 }); h.prepared(2400, 1600); h.rendered();
+    const source = processor.getSnapshot().source; const renders = h.count('render');
+    processor.resetSettings();
+    expect(processor.getSnapshot()).toMatchObject({ source, settings: { method: 'floyd-steinberg', bitsPerChannel: 4, soften: false, seed: 0 }, output: { mode: 'standard' }, canExport: false });
+    expect(h.count('render')).toBe(renders); expect(h.count('baseline')).toBe(3);
+    h.prepared(2400, 1600); h.rendered();
+    expect(processor.getSnapshot()).toMatchObject({ source, canExport: true, frame: { baseline: { width: 2048, height: 1365 } } });
+  });
+
+  it('classifies import, render and export errors for appropriate announcements', async () => {
+    await open(); await processor.importFiles([image(), image()]);
+    expect(processor.getSnapshot().errorAction).toBe('import');
+    processor.setSettings({ soften: true }); h.last('render').crash();
+    expect(processor.getSnapshot().errorAction).toBe('render');
+    processor.retry(); h.rendered(); expect(processor.getSnapshot().errorAction).toBeNull();
+    const exporting = processor.exportPng(); h.last('export').crash();
+    await expect(exporting).rejects.toMatchObject({ code: 'export-failed' });
+    expect(processor.getSnapshot()).toMatchObject({ errorAction: 'export', canExport: true });
   });
 
   it('disposes workers/bitmaps once, cancels export promises, and can reconnect empty for Strict Mode', async () => {

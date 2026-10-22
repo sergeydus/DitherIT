@@ -67,7 +67,7 @@ export type ExportReply = { kind: 'exported'; exportId: number; blob: Blob };
 export type FailureReply = { kind: 'failed'; code: FailureCode };
 export type WorkerReply = PrepareReply | RenderReply | ExportReply | FailureReply;
 
-export function renderFilename(frame: CommittedRender): string {
+export function renderFilename(frame: { baseline: Pick<Baseline, 'source' | 'width' | 'height'>; settings: RenderSettings }): string {
   const stem = frame.baseline.source.name.replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 100) || 'ditherit';
   const { method, bitsPerChannel } = frame.settings;
   return `${stem}-${method}${method === 'none' ? '' : `-${bitsPerChannel}bpc`}-${frame.baseline.width}x${frame.baseline.height}.png`;
