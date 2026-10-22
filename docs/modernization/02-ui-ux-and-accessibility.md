@@ -67,7 +67,7 @@ Reject invalid numeric depth on commit and restore the last valid value with inl
 
 Presets are a labeled native select or a clearly labeled set of buttons. Proposed presets: **Balanced** (Floyd–Steinberg, 4 bits/channel, soften off), **Classic texture** (Atkinson, 1, off), **Ordered texture** (Ordered, 2, off), **Soft grain** (Random, 2, on). Explain that these retain RGB color. Choosing a preset updates settings in one transaction and never changes output dimensions. Manual changes mark the preset **Custom**. Presets remain disabled before import.
 
-Random uses a stable seed for the current image. A **New variation** button appears only for Random, explicitly changes the seed, and announces the new result when ready. Other control changes must not silently randomize the pattern.
+Random uses a stable seed for the current image. A **New variation** button appears only for Random, explicitly changes the seed, and announces the new result when ready. Other control changes, presets, imports and Reset settings retain the seed; they must not silently randomize the pattern. New variation advances the unsigned 32-bit seed by one, wrapping at its limit. At 8 bits the selected seed changes but noise remains bypassed.
 
 ## Preview, comparison, and status — UX-05 (P1), PERF-02 (P0)
 

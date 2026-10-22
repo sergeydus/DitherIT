@@ -6,7 +6,7 @@ export const DEFAULT_SETTINGS: RenderSettings = { method: 'floyd-steinberg', bit
 export const STANDARD_OUTPUT: OutputSize = { mode: 'standard' };
 
 export type FailureCode = 'unsupported-type' | 'too-many-files' | 'file-too-large' | 'image-too-large' |
-  'decode-failed' | 'processing-failed' | 'unsupported-browser' | 'export-failed' | 'canceled';
+  'decode-failed' | 'processing-failed' | 'unsupported-browser' | 'export-failed' | 'sample-failed' | 'canceled';
 export const FAILURE_MESSAGES: Record<FailureCode, string> = {
   'unsupported-type': 'Choose a PNG, JPEG, WebP, GIF, AVIF, or BMP image supported by your browser.',
   'too-many-files': 'Choose one image at a time.',
@@ -16,6 +16,7 @@ export const FAILURE_MESSAGES: Record<FailureCode, string> = {
   'processing-failed': 'This preview couldn’t be rendered. Try again or choose a smaller output size.',
   'unsupported-browser': 'Image processing isn’t available in this browser. Try another supported browser.',
   'export-failed': 'We couldn’t prepare the PNG. Try again or choose a smaller output size.',
+  'sample-failed': 'The sample couldn’t be loaded. Try again or choose an image.',
   canceled: 'Preview canceled.',
 };
 export class ProcessingError extends Error {

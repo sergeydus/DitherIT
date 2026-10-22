@@ -2,6 +2,7 @@
 
 import { useSyncExternalStore } from 'react';
 import { THEME_STORAGE_KEY, themePreference, type ThemePreference } from '@/lib/theme';
+import { useClientReady } from '@/hooks/useClientReady';
 
 function apply(preference: ThemePreference) {
   const root = document.documentElement;
@@ -28,10 +29,11 @@ const snapshot = () => themePreference(document.documentElement.dataset.themePre
 const serverSnapshot = (): ThemePreference => 'system';
 
 export function ThemeSelect() {
+  const ready = useClientReady();
   const preference = useSyncExternalStore(subscribe, snapshot, serverSnapshot);
   return <div className="theme-control">
     <label htmlFor="theme">Theme</label>
-    <select id="theme" className="control" value={preference} onChange={event => {
+    <select id="theme" className="control" value={preference} disabled={!ready} onChange={event => {
       const next = themePreference(event.target.value);
       apply(next);
       try { localStorage.setItem(THEME_STORAGE_KEY, next); } catch { /* Keep the session preference if storage is blocked. */ }

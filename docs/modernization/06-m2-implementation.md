@@ -15,7 +15,7 @@ M2 implements UX-03, EXP-01–02 and the A11Y-01 portion of AC-20 on the existin
 ## Interpretation choices
 
 1. Numeric commit means **Enter or blur**. Drafts never invalidate an already committed render; an invalid draft restores its committed value and guidance persists until editing, reset or an external value change. No modal or alert is used for numeric validation.
-2. The first Custom width selection uses the current output width; subsequent selections reuse the previous custom width, clamped to the current source. Reset returns to Standard and the controller's complete defaults, including seed 0. The M4 seed/preset UI remains outside M2.
+2. The first Custom width selection uses the current output width; subsequent selections reuse the previous custom width, clamped to the current source. Reset returns to Standard and the default effect settings. M4 preserves the current seed across Reset so only New variation changes it; see specification 08 for that extension.
 3. The export summary/filename describe selected controls; the separately labeled rendered summary describes the retained result. Export eligibility continues to depend on the controller's committed matching render. Original keeps the existing filename method token `none` and omits depth.
 4. Accessibility checks cover the current dark layout. A second theme, full reflow/forced-colors coverage and exploration controls belong to M3/M4. NVDA/VoiceOver and real-device studies remain recommended and unperformed; axe and keyboard tests do not establish WCAG conformance.
 5. `@axe-core/playwright` is pinned to 4.11.1 to support the existing Node 20 deployment environment; newer 4.14 requires Node 22.12. The runtime dependency set is unchanged.

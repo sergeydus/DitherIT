@@ -18,7 +18,7 @@ async function tabTo(page: Page, target: Locator) {
   await expect(target).toBeFocused();
 }
 
-test.beforeEach(async ({ page }) => { await installWorkerProbe(page); await page.goto('./'); });
+test.beforeEach(async ({ page }) => { await installWorkerProbe(page); await page.goto('./'); await expect(page.getByRole('region', { name: 'Image source', exact: true }).getByRole('button', { name: 'Choose image', exact: true })).toBeEnabled(); });
 
 test('AC-10: native depth controls, committed validation, Original retention and reset', async ({ page }) => {
   await expect(page.getByLabel('Dithering Method')).toBeDisabled();
@@ -183,7 +183,7 @@ test('AC-12/20: debounce prevents uncommitted export; render errors stay inline 
 test('AC-20: keyboard-only import, controls, invalid recovery, reset and export preserve focus', async ({ page }) => {
   await page.keyboard.press('Tab'); await expect(page.getByRole('link', { name: 'Skip to image editor' })).toBeFocused();
   await page.keyboard.press('Enter'); await expect(page.getByRole('region', { name: 'Image editor' })).toBeFocused();
-  await tabTo(page, page.getByRole('button', { name: 'Choose image', exact: true }));
+  await tabTo(page, page.getByRole('region', { name: 'Image source', exact: true }).getByRole('button', { name: 'Choose image', exact: true }));
   const choosing = page.waitForEvent('filechooser'); await page.keyboard.press('Enter'); await (await choosing).setFiles(fixture()); await ready(page);
   await tabTo(page, page.getByLabel('Dithering Method'));
   await page.keyboard.press('Home'); await page.keyboard.press('ArrowDown'); await page.keyboard.press('ArrowDown'); await ready(page);

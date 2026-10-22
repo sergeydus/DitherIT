@@ -221,7 +221,7 @@ describe('AC-08/09/12/17/23: image lifecycle and ownership', () => {
     processor.setOutput({ mode: 'custom', width: 1200 }); h.prepared(2400, 1600); h.rendered();
     const source = processor.getSnapshot().source; const renders = h.count('render');
     processor.resetSettings();
-    expect(processor.getSnapshot()).toMatchObject({ source, settings: { method: 'floyd-steinberg', bitsPerChannel: 4, soften: false, seed: 0 }, output: { mode: 'standard' }, canExport: false });
+    expect(processor.getSnapshot()).toMatchObject({ source, settings: { method: 'floyd-steinberg', bitsPerChannel: 4, soften: false, seed: 42 }, output: { mode: 'standard' }, canExport: false });
     expect(h.count('render')).toBe(renders); expect(h.count('baseline')).toBe(3);
     h.prepared(2400, 1600); h.rendered();
     expect(processor.getSnapshot()).toMatchObject({ source, canExport: true, frame: { baseline: { width: 2048, height: 1365 } } });

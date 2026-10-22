@@ -168,7 +168,7 @@ export class ImageProcessor {
   resetSettings(): void {
     if (this.disposed) return;
     // One render/preparation transaction through the existing output lifecycle.
-    this.state = { ...this.state, settings: { ...DEFAULT_SETTINGS } };
+    this.state = { ...this.state, settings: { ...DEFAULT_SETTINGS, seed: this.state.settings.seed } };
     this.setOutput({ ...STANDARD_OUTPUT });
   }
 
@@ -254,8 +254,8 @@ export class ImageProcessor {
     else if (this.file && this.state.source) this.prepare(this.file, this.state.source.id, null);
   }
 
-  reportFailure(code: keyof typeof FAILURE_MESSAGES): void {
-    if (!this.disposed) this.publish({ error: FAILURE_MESSAGES[code], errorAction: 'export' });
+  reportFailure(code: keyof typeof FAILURE_MESSAGES, errorAction: 'import' | 'render' | 'export' = 'export'): void {
+    if (!this.disposed) this.publish({ error: FAILURE_MESSAGES[code], errorAction });
   }
 
   exportPng(): Promise<{ blob: Blob; filename: string }> {

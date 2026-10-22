@@ -21,7 +21,7 @@ for (const theme of themes) for (const width of widths) {
   test(`AC-15/20/22: ${theme}, ${width}px, empty/ready/processing/error screenshots and axe`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width, height: 900 });
     await page.emulateMedia({ colorScheme: theme });
-    await page.goto('./');
+    await page.goto('./'); await expect(page.getByRole('region', { name: 'Image source', exact: true }).getByRole('button', { name: 'Choose image', exact: true })).toBeEnabled();
     await page.getByLabel('Theme', { exact: true }).selectOption(theme);
     const directory = path.join(testInfo.project.outputDir, 'm3-screenshots');
     await mkdir(directory, { recursive: true });
@@ -35,7 +35,7 @@ for (const theme of themes) for (const width of widths) {
     };
     await capture('empty');
     await expect(page.getByRole('heading', { name: 'Make something out of fewer colors.' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Choose image', exact: true })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Image source', exact: true }).getByRole('button', { name: 'Choose image', exact: true })).toBeVisible();
     await expect(page.locator('#image-upload')).toBeHidden();
     await open(page); await capture('ready');
     await expect(page.locator('#rendered-summary')).toHaveCount(0);
@@ -62,7 +62,7 @@ for (const theme of themes) for (const width of widths) {
 }
 
 test('AC-15: System follows OS; explicit themes persist, ignore OS changes and leave image bytes unchanged', async ({ page }) => {
-  await page.emulateMedia({ colorScheme: 'dark' }); await page.goto('./');
+  await page.emulateMedia({ colorScheme: 'dark' }); await page.goto('./'); await expect(page.getByRole('region', { name: 'Image source', exact: true }).getByRole('button', { name: 'Choose image', exact: true })).toBeEnabled();
   await expect(page.getByLabel('Theme', { exact: true })).toHaveValue('system');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   await page.emulateMedia({ colorScheme: 'light' }); await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
@@ -92,7 +92,7 @@ test('AC-15: blocked storage and invalid saved values fall back harmlessly to Sy
     Object.defineProperty(Storage.prototype, 'getItem', { value() { throw new DOMException('Blocked', 'SecurityError'); } });
     Object.defineProperty(Storage.prototype, 'setItem', { value() { throw new DOMException('Blocked', 'SecurityError'); } });
   });
-  await page.emulateMedia({ colorScheme: 'dark' }); await page.goto('./');
+  await page.emulateMedia({ colorScheme: 'dark' }); await page.goto('./'); await expect(page.getByRole('region', { name: 'Image source', exact: true }).getByRole('button', { name: 'Choose image', exact: true })).toBeEnabled();
   await expect(page.getByLabel('Theme', { exact: true })).toHaveValue('system');
   await page.getByLabel('Theme', { exact: true }).selectOption('light');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light'); await open(page);
@@ -102,7 +102,7 @@ test('AC-15: blocked storage and invalid saved values fall back harmlessly to Sy
 
 test('AC-15/19: invalid preference, metadata, local mark and loaded Geist fonts at the static base path', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('ditherit-theme', 'invalid'));
-  await page.emulateMedia({ colorScheme: 'light' }); await page.goto('./');
+  await page.emulateMedia({ colorScheme: 'light' }); await page.goto('./'); await expect(page.getByRole('region', { name: 'Image source', exact: true }).getByRole('button', { name: 'Choose image', exact: true })).toBeEnabled();
   await expect(page.getByLabel('Theme', { exact: true })).toHaveValue('system');
   await expect(page).toHaveTitle('DitherIT — Image Dithering Studio');
   await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', 'Explore dithering styles, compare results, and export reduced-color images directly in your browser.');
@@ -121,7 +121,7 @@ test('AC-15/19: invalid preference, metadata, local mark and loaded Geist fonts 
 });
 
 for (const theme of themes) test(`AC-22: ${theme} at 320px, 200% text and text-spacing overrides`, async ({ page }) => {
-  await page.setViewportSize({ width: 320, height: 900 }); await page.goto('./');
+  await page.setViewportSize({ width: 320, height: 900 }); await page.goto('./'); await expect(page.getByRole('region', { name: 'Image source', exact: true }).getByRole('button', { name: 'Choose image', exact: true })).toBeEnabled();
   await page.getByLabel('Theme', { exact: true }).selectOption(theme);
   const bytes = await readFile(fixture);
   const name = 'a-very-long-source-filename-that-must-remain-accessible-'.repeat(3) + '.png';
@@ -141,7 +141,7 @@ for (const theme of themes) test(`AC-22: ${theme} at 320px, 200% text and text-s
 });
 
 test('AC-22: forced colors retain controls/focus and reduced motion removes transitions', async ({ page }) => {
-  await page.emulateMedia({ forcedColors: 'active', reducedMotion: 'reduce' }); await page.goto('./'); await open(page);
+  await page.emulateMedia({ forcedColors: 'active', reducedMotion: 'reduce' }); await page.goto('./'); await expect(page.getByRole('region', { name: 'Image source', exact: true }).getByRole('button', { name: 'Choose image', exact: true })).toBeEnabled(); await open(page);
   expect(await page.evaluate(() => matchMedia('(forced-colors: active)').matches)).toBe(true);
   await page.getByLabel('Dithering Method').focus();
   const appearance = await page.getByLabel('Dithering Method').evaluate(element => {

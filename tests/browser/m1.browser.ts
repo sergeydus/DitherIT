@@ -47,7 +47,7 @@ test.beforeEach(async ({ page }) => {
       return Array.from(read.call(canvas.getContext('2d')!, 0, 0, canvas.width, canvas.height).data);
     };
   });
-  await page.goto('./');
+  await page.goto('./'); await expect(page.getByRole('region', { name: 'Image source', exact: true }).getByRole('button', { name: 'Choose image', exact: true })).toBeEnabled();
 });
 
 test('production chunks, cached baseline, worker softening and PNG snapshot work at /DitherIT/', async ({ page }) => {
@@ -75,7 +75,7 @@ test('production chunks, cached baseline, worker softening and PNG snapshot work
   expect(Array.from(decoded.pixels)).toEqual(committed.pixels);
   expect(committed.pixels.some((value, index) => index % 4 === 3 && value > 0 && value < 255)).toBe(true);
   expect(after.sent.export).toBe(1); expect(after.pixelOps).toBe(0); expect(uploads).toEqual([]); expect(errors).toEqual([]);
-  await page.reload(); await expect(page.getByRole('button', { name: 'Choose image', exact: true })).toBeVisible();
+  await page.reload(); await expect(page.getByRole('region', { name: 'Image source', exact: true }).getByRole('button', { name: 'Choose image', exact: true })).toBeVisible();
 });
 
 test('supported rasters use stable default/first frames and oriented dimensions', async ({ page }) => {
@@ -151,5 +151,5 @@ test('worker startup failure is actionable and import remains available', async 
   await page.reload();
   await page.getByLabel('Upload Image').setInputFiles(fixture('still.png'));
   await expect(page.getByRole('region', { name: 'Image editor' }).getByRole('alert')).toContainText('isn’t available');
-  await expect(page.getByRole('button', { name: 'Choose image', exact: true })).toBeEnabled();
+  await expect(page.getByRole('region', { name: 'Image source', exact: true }).getByRole('button', { name: 'Choose image', exact: true })).toBeEnabled();
 });
