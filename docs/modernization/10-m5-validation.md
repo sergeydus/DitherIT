@@ -1,6 +1,6 @@
 # M5 — Release validation
 
-M5 implements QA-01 and ARCH-02. The [requirements register](04-delivery-and-acceptance.md#requirements-and-evidence) links M0–M4 tests/notes and M5's workflows and user documentation. Local verification does not assert that a hosted Actions run or Pages deployment has happened.
+M5 implements QA-01 and ARCH-02. The [requirements register](04-delivery-and-acceptance.md#requirements-and-evidence) links M0–M4 tests/notes and M5's workflows and user documentation. Local verification and the first hosted release verification are recorded separately below.
 
 ## Changes
 
@@ -78,11 +78,32 @@ Ratios calculated from the actual [CSS tokens](../../src/app/globals.css), using
 | Essential border / surfaces | 3.80:1 | 3.28:1 | 3:1 |
 | Primary button text / accent | 8.98:1 | 9.25:1 | 4.5:1 |
 
-## Interpretation choices and open evidence
+## First hosted release verification — closed
+
+On 2026-10-22, pushing `59ad77aa1535a007e7cc1c2820851d75b2715b50` (`Move CI and tooling to Node 22`) to `master` triggered [run 39826785673](https://github.com/sergeydus/DitherIT/actions/runs/39826785673). `gh run watch --exit-status` exited successfully; the workflow reports **completed / success**. The runner image was **Ubuntu 24.04**, with **Node 22.23.3 / npm 10.9.9**.
+
+| Hosted gate | Result / timing |
+| --- | --- |
+| Checkout, setup Node, `npm ci` | Pass |
+| Lint, `tsc --noEmit`, Node tests | Pass; 129 Node tests |
+| Production static build | Pass |
+| Playwright Chromium and system dependencies | Pass |
+| Production browser suite | **46 passed (1.8 minutes)**; step timestamps 17:56:09–17:57:59 UTC = **1 minute 50 seconds** including runner overhead |
+| Pages artifact upload | Pass; build job total **3 minutes 14 seconds** |
+| Deploy to GitHub Pages action | Pass; step timestamps 17:58:12–17:58:25 UTC |
+| Browser failure artifact upload | Skipped as expected because no check failed; hosted failure-upload execution was not exercised |
+
+Live smoke at **[https://sergeydus.github.io/DitherIT/](https://sergeydus.github.io/DitherIT/)** used Chromium 156.0.8078.4 after deployment: HTTP 200, correct product title, **Try a sample** rendered `ditherit-sample.png` at 1200 × 800 with Ready status, and **Export PNG** downloaded `ditherit-sample-floyd-steinberg-4bpc-1200x800.png` (**420,752 bytes**). Independent Node signature/header/zlib/row-length checks confirmed an 8-bit RGBA PNG at those dimensions. There were no page errors; the ready screenshot was visually inspected. Local artifacts are in `test-results/live-smoke/` (ignored by Git).
+
+GitHub metadata caveat: the overall run was completed/success and every deploy step was successful, while separate job/environment APIs still returned `in_progress` at verification time. This inconsistency is recorded rather than treating the aggregate job field as terminal. The successful Pages action and live render/download establish the deployment outcome; no workflow retry or duplicate deployment was requested to resolve the metadata.
+
+GitHub also emitted nonblocking notices that v4 actions declare Node 20 but are forced by the runner onto Node 24, and that `ubuntu-latest` is migrating to Ubuntu 26. These refer to action internals/runner selection; the project's setup-node and checks used Node 22 as recorded above.
+
+## Interpretation choices and follow-up evidence
 
 1. First-frame controls are absent until there is a committed image; a truthful empty-preview message also works after cancellation/failure. There is still only one polite status region. Previously committed frames remain inspectable while an update runs.
 2. Browser checks must run **after** the production build, so both workflows build before installing/running Playwright. Pages upload and deploy remain after all checks. PRs never publish.
 3. Pre-release tooling targets Node 22 in both workflows and `.nvmrc`, with a package engine minimum of 22.12 and `@axe-core/playwright` updated to the current 4.x line. The original M5 local checks used Node 24. Benchmark results are Node medians, not the spec's recommended browser/device p95 study.
 4. The 320 CSS px viewport is the layout equivalent of a 1280 px viewport at 400% browser zoom. Automated viewport/text checks do not claim browser chrome zoom or native assistive-technology validation.
-5. **Open — first hosted Actions/Pages verification:** awaiting the authorized pre-release push-triggered run and live smoke check. Verify that run, its failure-artifact behavior if a check fails, the Pages environment and hosted refresh/assets after deployment; attach the run URL to QA-01 when available. Local YAML/event/order inspection and static-path browser tests cover the local release gate, without claiming this operational evidence.
+5. **Closed — first hosted Actions/Pages verification:** [run 39826785673](https://github.com/sergeydus/DitherIT/actions/runs/39826785673) verifies the `master` push trigger, all required Ubuntu gates and the successful Pages action; the live sample/render/export smoke passed. The job/environment summary inconsistency and unexercised hosted failure-upload branch are disclosed above.
 6. **Not performed — recommended studies:** NVDA/VoiceOver, formative usability, multi-device p95/heap profiling, full browser/touch matrix and reviewed before/after photo/art gallery. Automated Chromium/axe and synthetic Node timing do not establish WCAG conformance, broad compatibility or mobile performance.

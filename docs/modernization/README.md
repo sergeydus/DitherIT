@@ -1,6 +1,6 @@
 # DitherIT modernization specifications
 
-Prepared 2026-10-22. Status: M0–M5 are implemented and local release validation is recorded in [M5 notes](10-m5-validation.md). The deployment push filter targets `master`; the first hosted Actions/Pages run remains open until verified after the authorized pre-release push.
+Prepared 2026-10-22. Status: M0–M5 are implemented; local checks, the first hosted Ubuntu CI/Pages run and live sample/export smoke are recorded in [M5 notes](10-m5-validation.md). The deployment push filter targets `master`.
 
 DitherIT should become a focused, accessible image workshop: open a local image, understand the effect, compare the result, and export exactly what the interface promises. Keep the small static application and local processing model. Prioritize trustworthy output and responsive interaction alongside the visual redesign.
 
@@ -38,4 +38,4 @@ These decisions are implemented; the linked notes describe their checks and limi
 
 ## Boundaries
 
-M0–M5 are implemented; specifications 05–10 record the checks and their limits. The local production artifact is validated without publishing. Hosted CI/deployment verification and recommended studies remain explicitly open; accessibility conformance is not claimed.
+M0–M5 are implemented; specifications 05–10 record the checks and their limits. The production artifact and first hosted release are verified. Recommended studies remain unperformed; accessibility conformance is not claimed.
